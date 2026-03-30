@@ -35,20 +35,30 @@ func (s *TransactionService) Create(ctx context.Context, req dto.CreateTransacti
 	return toResponse(tx), nil
 }
 
-func (s *TransactionService) GetByUserID(ctx context.Context, userID string) ([]dto.TransactionResponse, error) {
-	txs, err := s.repo.FindByUserID(ctx, userID)
+func (s *TransactionService) GetByUserID(ctx context.Context, userID string, page dto.PageRequest) (dto.PaginatedResponse[dto.TransactionResponse], error) {
+	page.Normalize()
+
+	txs, total, err := s.repo.FindByUserID(ctx, userID, page.Skip(), page.Limit)
 	if err != nil {
-		return nil, fmt.Errorf("get by user_id: %w", err)
+		return dto.PaginatedResponse[dto.TransactionResponse]{}, fmt.Errorf("get by user_id: %w", err)
 	}
-	return toResponses(txs), nil
+	return dto.PaginatedResponse[dto.TransactionResponse]{
+		Items: toResponses(txs),
+		Meta:  dto.NewPageMeta(page.Page, page.Limit, total),
+	}, nil
 }
 
-func (s *TransactionService) GetFraudsBetween(ctx context.Context, from, to time.Time) ([]dto.TransactionResponse, error) {
-	txs, err := s.repo.FindFraudsBetween(ctx, from, to)
+func (s *TransactionService) GetFraudsBetween(ctx context.Context, from, to time.Time, page dto.PageRequest) (dto.PaginatedResponse[dto.TransactionResponse], error) {
+	page.Normalize()
+
+	txs, total, err := s.repo.FindFraudsBetween(ctx, from, to, page.Skip(), page.Limit)
 	if err != nil {
-		return nil, fmt.Errorf("get frauds between: %w", err)
+		return dto.PaginatedResponse[dto.TransactionResponse]{}, fmt.Errorf("get frauds between: %w", err)
 	}
-	return toResponses(txs), nil
+	return dto.PaginatedResponse[dto.TransactionResponse]{
+		Items: toResponses(txs),
+		Meta:  dto.NewPageMeta(page.Page, page.Limit, total),
+	}, nil
 }
 
 func (s *TransactionService) UpdateStatus(ctx context.Context, rawID string, req dto.UpdateStatusRequest) error {
@@ -62,6 +72,44 @@ func (s *TransactionService) UpdateStatus(ctx context.Context, rawID string, req
 		return fmt.Errorf("invalid transaction id: %w", err)
 	}
 	return s.repo.UpdateStatus(ctx, id, status)
+}
+
+func (s *TransactionService) GetUserTrustScore(ctx context.Context, userID string) (dto.UserTrustScoreResponse, error) {
+	stats, err := s.repo.GetUserStats(ctx, userID)
+	if err != nil {
+		return dto.UserTrustScoreResponse{}, fmt.Errorf("get user stats: %w", err)
+	}
+
+	score := calculateTrustScore(stats.Total, stats.FraudCount)
+
+	return dto.UserTrustScoreResponse{
+		UserID:     userID,
+		Score:      score,
+		RiskLevel:  riskLevel(score),
+		Total:      stats.Total,
+		FraudCount: stats.FraudCount,
+	}, nil
+}
+
+// calculateTrustScore: işlem geçmişi yoksa 100 (nötr başlangıç).
+// Aksi hâlde fraud olmayan işlemlerin oranı 0-100 arasına ölçeklenir.
+func calculateTrustScore(total, fraudCount int64) float64 {
+	if total == 0 {
+		return 100
+	}
+	return (float64(total-fraudCount) / float64(total)) * 100
+}
+
+// riskLevel: score eşikleri iş kuralına göre ayarlanabilir.
+func riskLevel(score float64) string {
+	switch {
+	case score >= 80:
+		return "low"
+	case score >= 50:
+		return "medium"
+	default:
+		return "high"
+	}
 }
 
 func toResponse(tx models.Transaction) dto.TransactionResponse {

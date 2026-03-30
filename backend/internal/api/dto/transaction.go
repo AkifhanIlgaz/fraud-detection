@@ -17,6 +17,14 @@ type TransactionsBetweenRequest struct {
 	To   string `query:"to"`
 }
 
+type UserTrustScoreResponse struct {
+	UserID     string  `json:"user_id"`
+	Score      float64 `json:"score"`       // 0-100
+	RiskLevel  string  `json:"risk_level"`  // low | medium | high
+	Total      int64   `json:"total"`
+	FraudCount int64   `json:"fraud_count"`
+}
+
 type TransactionResponse struct {
 	ID           string   `json:"id"`
 	UserID       string   `json:"user_id"`

@@ -14,9 +14,11 @@ import (
 
 type TransactionRepository interface {
 	Insert(ctx context.Context, tx *models.Transaction) error
-	FindByUserID(ctx context.Context, userID string) ([]models.Transaction, error)
-	FindFraudsBetween(ctx context.Context, from, to time.Time) ([]models.Transaction, error)
+	FindByUserID(ctx context.Context, userID string, skip, limit int64) ([]models.Transaction, int64, error)
+	FindFraudsBetween(ctx context.Context, from, to time.Time, skip, limit int64) ([]models.Transaction, int64, error)
+
 	UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus) error
+	GetUserStats(ctx context.Context, userID string) (models.UserTransactionStats, error)
 }
 
 type transactionRepo struct {
@@ -31,9 +33,11 @@ func NewTransactionRepository(ctx context.Context, client *mongo.Client) (Transa
 	// created_at (desc) ikinci alan olarak eklendi; FindByUserID sorgusunda
 	// MongoDB hem filtreyi hem de sıralamayı index üzerinden karşılar, ekstra sort adımı gerekmez.
 	// FindTransactionsBetween'deki created_at range sorgusu da bu index'ten yararlanır.
-	indexKeys := bson.M{
-		"user_id":    1,
-		"created_at": -1,
+	// Index key sırası önemli olduğundan bson.D kullanılmalı;
+	// bson.M map olduğu için key sırasını garanti etmez, MongoDB reddeder.
+	indexKeys := bson.D{
+		{Key: "user_id", Value: 1},
+		{Key: "created_at", Value: -1},
 	}
 	indexOpts := options.Index().SetName("user_id_created_at")
 	index := mongo.IndexModel{
@@ -55,24 +59,33 @@ func (r *transactionRepo) Insert(ctx context.Context, tx *models.Transaction) er
 	return nil
 }
 
-func (r *transactionRepo) FindByUserID(ctx context.Context, userID string) ([]models.Transaction, error) {
+func (r *transactionRepo) FindByUserID(ctx context.Context, userID string, skip, limit int64) ([]models.Transaction, int64, error) {
 	filter := bson.M{"user_id": userID}
-	findOpts := options.Find().SetSort(bson.M{"created_at": -1})
+
+	total, err := r.col.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count by user_id: %w", err)
+	}
+
+	findOpts := options.Find().
+		SetSort(bson.M{"created_at": -1}).
+		SetSkip(skip).
+		SetLimit(limit)
 
 	cur, err := r.col.Find(ctx, filter, findOpts)
 	if err != nil {
-		return nil, fmt.Errorf("find by user_id: %w", err)
+		return nil, 0, fmt.Errorf("find by user_id: %w", err)
 	}
 	defer cur.Close(ctx)
 
 	var txs []models.Transaction
 	if err := cur.All(ctx, &txs); err != nil {
-		return nil, fmt.Errorf("decode transactions: %w", err)
+		return nil, 0, fmt.Errorf("decode transactions: %w", err)
 	}
-	return txs, nil
+	return txs, total, nil
 }
 
-func (r *transactionRepo) FindFraudsBetween(ctx context.Context, from, to time.Time) ([]models.Transaction, error) {
+func (r *transactionRepo) FindFraudsBetween(ctx context.Context, from, to time.Time, skip, limit int64) ([]models.Transaction, int64, error) {
 	filter := bson.M{
 		"status": models.StatusFraud,
 		"created_at": bson.M{
@@ -80,19 +93,64 @@ func (r *transactionRepo) FindFraudsBetween(ctx context.Context, from, to time.T
 			"$lte": to,
 		},
 	}
-	findOpts := options.Find().SetSort(bson.M{"created_at": -1})
+
+	total, err := r.col.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count frauds between: %w", err)
+	}
+
+	findOpts := options.Find().
+		SetSort(bson.M{"created_at": -1}).
+		SetSkip(skip).
+		SetLimit(limit)
 
 	cur, err := r.col.Find(ctx, filter, findOpts)
 	if err != nil {
-		return nil, fmt.Errorf("find frauds between: %w", err)
+		return nil, 0, fmt.Errorf("find frauds between: %w", err)
 	}
 	defer cur.Close(ctx)
 
 	var txs []models.Transaction
 	if err := cur.All(ctx, &txs); err != nil {
-		return nil, fmt.Errorf("decode frauds: %w", err)
+		return nil, 0, fmt.Errorf("decode frauds: %w", err)
 	}
-	return txs, nil
+	return txs, total, nil
+}
+
+func (r *transactionRepo) GetUserStats(ctx context.Context, userID string) (models.UserTransactionStats, error) {
+	pipeline := mongo.Pipeline{
+		// Sadece bu kullanıcının işlemlerini al
+		{{Key: "$match", Value: bson.M{"user_id": userID}}},
+		// Toplam işlem sayısını ve fraud olanları say
+		{{Key: "$group", Value: bson.M{
+			"_id":   "$user_id",
+			"total": bson.M{"$sum": 1},
+			"fraud_count": bson.M{
+				"$sum": bson.M{
+					"$cond": bson.A{
+						bson.M{"$eq": bson.A{"$status", models.StatusFraud}},
+						1,
+						0,
+					},
+				},
+			},
+		}}},
+	}
+
+	cur, err := r.col.Aggregate(ctx, pipeline)
+	if err != nil {
+		return models.UserTransactionStats{}, fmt.Errorf("aggregate user stats: %w", err)
+	}
+	defer cur.Close(ctx)
+
+	var results []models.UserTransactionStats
+	if err := cur.All(ctx, &results); err != nil {
+		return models.UserTransactionStats{}, fmt.Errorf("decode user stats: %w", err)
+	}
+	if len(results) == 0 {
+		return models.UserTransactionStats{UserID: userID}, nil
+	}
+	return results[0], nil
 }
 
 func (r *transactionRepo) UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus) error {

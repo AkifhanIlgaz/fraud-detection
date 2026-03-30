@@ -1,9 +1,9 @@
 package api
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/logger"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 
 	"fraud-detection/internal/api/handler"
 	"fraud-detection/internal/service"
@@ -22,6 +22,7 @@ func NewRouter(repo store.TransactionRepository) *fiber.App {
 	tx := v1.Group("/transactions")
 	tx.Post("", txHandler.Create)
 	tx.Get("/user/:userID", txHandler.GetByUserID)
+	tx.Get("/user/:userID/trust-score", txHandler.GetTrustScore)
 	tx.Get("/frauds", txHandler.GetFraudsBetween)
 	tx.Patch("/:id/status", txHandler.UpdateStatus)
 
