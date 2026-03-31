@@ -16,7 +16,6 @@ type TransactionRepository interface {
 	Insert(ctx context.Context, tx *models.Transaction) error
 	FindByUserID(ctx context.Context, userID string, skip, limit int64) ([]models.Transaction, int64, error)
 	FindFraudsBetween(ctx context.Context, from, to time.Time, skip, limit int64) ([]models.Transaction, int64, error)
-
 	UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus) error
 	GetUserStats(ctx context.Context, userID string) (models.UserTransactionStats, error)
 }

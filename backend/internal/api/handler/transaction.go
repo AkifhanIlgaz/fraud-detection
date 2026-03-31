@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"time"
 
 	"github.com/gofiber/fiber/v3"
 
@@ -23,74 +22,74 @@ func NewTransactionHandler(svc *service.TransactionService) *TransactionHandler 
 func (h *TransactionHandler) Create(c fiber.Ctx) error {
 	var req dto.CreateTransactionRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
-	if err := validateCreate(req); err != nil {
-		return response.BadRequest(c, err)
+	if err := req.Validate(); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
 
 	res, err := h.svc.Create(c.Context(), req)
 	if err != nil {
-		return response.InternalError(c, err)
+		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
-	return response.Created(c, res)
+	return response.OK(c, fiber.StatusCreated, res)
 }
 
 // GET /api/v1/transactions/user/:userID?page=1&limit=20
 func (h *TransactionHandler) GetByUserID(c fiber.Ctx) error {
 	userID := c.Params("userID")
 	if userID == "" {
-		return response.BadRequest(c, errors.New("userID is required"))
+		return response.Error(c, fiber.StatusBadRequest, errors.New("userID is required"))
 	}
 
 	var page dto.PageRequest
 	if err := c.Bind().Query(&page); err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
 
 	res, err := h.svc.GetByUserID(c.Context(), userID, page)
 	if err != nil {
-		return response.InternalError(c, err)
+		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
-	return response.OK(c, res)
+	return response.OK(c, fiber.StatusOK, res)
 }
 
 // GET /api/v1/transactions/frauds?from=&to=&page=1&limit=20
 func (h *TransactionHandler) GetFraudsBetween(c fiber.Ctx) error {
 	var req dto.TransactionsBetweenRequest
 	if err := c.Bind().Query(&req); err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
 
-	from, to, err := parseDateRange(req.From, req.To)
+	from, to, err := req.Parse()
 	if err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
 
 	var page dto.PageRequest
 	if err := c.Bind().Query(&page); err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
 
 	res, err := h.svc.GetFraudsBetween(c.Context(), from, to, page)
 	if err != nil {
-		return response.InternalError(c, err)
+		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
-	return response.OK(c, res)
+	return response.OK(c, fiber.StatusOK, res)
 }
 
 // GET /api/v1/transactions/user/:userID/trust-score
 func (h *TransactionHandler) GetTrustScore(c fiber.Ctx) error {
 	userID := c.Params("userID")
 	if userID == "" {
-		return response.BadRequest(c, errors.New("userID is required"))
+		return response.Error(c, fiber.StatusBadRequest, errors.New("userID is required"))
 	}
 
 	res, err := h.svc.GetUserTrustScore(c.Context(), userID)
 	if err != nil {
-		return response.InternalError(c, err)
+		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
-	return response.OK(c, res)
+	return response.OK(c, fiber.StatusOK, res)
 }
 
 // PATCH /api/v1/transactions/:id/status
@@ -99,48 +98,14 @@ func (h *TransactionHandler) UpdateStatus(c fiber.Ctx) error {
 
 	var req dto.UpdateStatusRequest
 	if err := c.Bind().Body(&req); err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
-	if req.Status == "" {
-		return response.BadRequest(c, errors.New("status is required"))
+	if err := req.Validate(); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
 
 	if err := h.svc.UpdateStatus(c.Context(), id, req); err != nil {
-		return response.BadRequest(c, err)
+		return response.Error(c, fiber.StatusBadRequest, err)
 	}
-	return response.OK(c, nil)
-}
-
-func validateCreate(req dto.CreateTransactionRequest) error {
-	if req.UserID == "" {
-		return errors.New("user_id is required")
-	}
-	if req.Amount <= 0 {
-		return errors.New("amount must be greater than 0")
-	}
-	if req.Lat < -90 || req.Lat > 90 {
-		return errors.New("lat must be between -90 and 90")
-	}
-	if req.Lon < -180 || req.Lon > 180 {
-		return errors.New("lon must be between -180 and 180")
-	}
-	return nil
-}
-
-func parseDateRange(from, to string) (time.Time, time.Time, error) {
-	if from == "" || to == "" {
-		return time.Time{}, time.Time{}, errors.New("from and to are required")
-	}
-	f, err := time.Parse(time.RFC3339, from)
-	if err != nil {
-		return time.Time{}, time.Time{}, errors.New("from must be RFC3339 (e.g. 2024-01-01T00:00:00Z)")
-	}
-	t, err := time.Parse(time.RFC3339, to)
-	if err != nil {
-		return time.Time{}, time.Time{}, errors.New("to must be RFC3339 (e.g. 2024-01-01T00:00:00Z)")
-	}
-	if !f.Before(t) {
-		return time.Time{}, time.Time{}, errors.New("from must be before to")
-	}
-	return f, t, nil
+	return response.OK(c, fiber.StatusOK, nil)
 }

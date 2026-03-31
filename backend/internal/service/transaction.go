@@ -32,7 +32,7 @@ func (s *TransactionService) Create(ctx context.Context, req dto.CreateTransacti
 	if err := s.repo.Insert(ctx, &tx); err != nil {
 		return dto.TransactionResponse{}, fmt.Errorf("create transaction: %w", err)
 	}
-	return toResponse(tx), nil
+	return dto.NewTransactionResponse(tx), nil
 }
 
 func (s *TransactionService) GetByUserID(ctx context.Context, userID string, page dto.PageRequest) (dto.PaginatedResponse[dto.TransactionResponse], error) {
@@ -43,7 +43,7 @@ func (s *TransactionService) GetByUserID(ctx context.Context, userID string, pag
 		return dto.PaginatedResponse[dto.TransactionResponse]{}, fmt.Errorf("get by user_id: %w", err)
 	}
 	return dto.PaginatedResponse[dto.TransactionResponse]{
-		Items: toResponses(txs),
+		Items: dto.NewTransactionResponses(txs),
 		Meta:  dto.NewPageMeta(page.Page, page.Limit, total),
 	}, nil
 }
@@ -56,7 +56,7 @@ func (s *TransactionService) GetFraudsBetween(ctx context.Context, from, to time
 		return dto.PaginatedResponse[dto.TransactionResponse]{}, fmt.Errorf("get frauds between: %w", err)
 	}
 	return dto.PaginatedResponse[dto.TransactionResponse]{
-		Items: toResponses(txs),
+		Items: dto.NewTransactionResponses(txs),
 		Meta:  dto.NewPageMeta(page.Page, page.Limit, total),
 	}, nil
 }
@@ -110,25 +110,4 @@ func riskLevel(score float64) string {
 	default:
 		return "high"
 	}
-}
-
-func toResponse(tx models.Transaction) dto.TransactionResponse {
-	return dto.TransactionResponse{
-		ID:           tx.ID.Hex(),
-		UserID:       tx.UserID,
-		Amount:       tx.Amount,
-		Lat:          tx.Lat,
-		Lon:          tx.Lon,
-		Status:       tx.Status.String(),
-		CreatedAt:    tx.CreatedAt.Format(time.RFC3339),
-		FraudReasons: tx.FraudReasons,
-	}
-}
-
-func toResponses(txs []models.Transaction) []dto.TransactionResponse {
-	out := make([]dto.TransactionResponse, len(txs))
-	for i, tx := range txs {
-		out[i] = toResponse(tx)
-	}
-	return out
 }

@@ -8,10 +8,10 @@ import (
 )
 
 type Config struct {
-	MongoURI    string
-	RedisAddr   string
-	RabbitMQURL string
-	Port        string
+	MongoURI    string `mapstructure:"MONGO_URI"`
+	RedisAddr   string `mapstructure:"REDIS_ADDR"`
+	RabbitMQURL string `mapstructure:"RABBITMQ_URL"`
+	Port        string `mapstructure:"PORT"`
 }
 
 func Load() (*Config, error) {

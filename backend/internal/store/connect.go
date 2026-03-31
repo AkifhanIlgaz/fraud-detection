@@ -13,8 +13,10 @@ func Connect(ctx context.Context, uri string) (*mongo.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("mongo connect: %w", err)
 	}
+
 	if err := client.Ping(ctx, nil); err != nil {
 		return nil, fmt.Errorf("mongo ping: %w", err)
 	}
+
 	return client, nil
 }
