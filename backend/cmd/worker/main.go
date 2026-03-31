@@ -9,7 +9,9 @@ import (
 
 	"fraud-detection/config"
 	"fraud-detection/internal/cache"
+	"fraud-detection/internal/fraud"
 	"fraud-detection/internal/queue"
+	"fraud-detection/internal/store"
 	"fraud-detection/internal/worker"
 )
 
@@ -22,11 +24,16 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	q, err := queue.New(cfg.RabbitMQURL)
+	mongoClient, err := store.Connect(ctx, cfg.MongoURI)
 	if err != nil {
-		log.Fatalf("rabbitmq: %v", err)
+		log.Fatalf("mongo: %v", err)
 	}
-	defer q.Close()
+	defer mongoClient.Disconnect(ctx)
+
+	repo, err := store.NewTransactionRepository(ctx, mongoClient)
+	if err != nil {
+		log.Fatalf("repo: %v", err)
+	}
 
 	rdb, err := cache.Connect(ctx, cfg.RedisAddr)
 	if err != nil {
@@ -34,7 +41,15 @@ func main() {
 	}
 	defer rdb.Close()
 
-	w := worker.New(q, rdb)
+	q, err := queue.New(cfg.RabbitMQURL)
+	if err != nil {
+		log.Fatalf("rabbitmq: %v", err)
+	}
+	defer q.Close()
+
+	analyzer := fraud.NewAnalyzer(repo, cache.NewFraudCache(rdb))
+	w := worker.New(q, analyzer)
+
 	if err := w.Run(ctx); err != nil {
 		log.Fatalf("worker: %v", err)
 	}
