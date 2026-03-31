@@ -9,15 +9,17 @@ import (
 
 	"fraud-detection/internal/api/dto"
 	"fraud-detection/internal/models"
+	"fraud-detection/internal/queue"
 	"fraud-detection/internal/store"
 )
 
 type TransactionService struct {
-	repo store.TransactionRepository
+	repo  store.TransactionRepository
+	queue *queue.Client
 }
 
-func NewTransactionService(repo store.TransactionRepository) *TransactionService {
-	return &TransactionService{repo: repo}
+func NewTransactionService(repo store.TransactionRepository, q *queue.Client) *TransactionService {
+	return &TransactionService{repo: repo, queue: q}
 }
 
 func (s *TransactionService) Create(ctx context.Context, req dto.CreateTransactionRequest) (dto.TransactionResponse, error) {
@@ -32,6 +34,13 @@ func (s *TransactionService) Create(ctx context.Context, req dto.CreateTransacti
 	if err := s.repo.Insert(ctx, &tx); err != nil {
 		return dto.TransactionResponse{}, fmt.Errorf("create transaction: %w", err)
 	}
+
+	// Fraud worker'ın işleyebilmesi için transaction'ı kuyruğa yaz.
+	// Publish hatası transaction'ı iptal etmez — DB'ye yazıldı, kuyruk best-effort.
+	if err := s.queue.PublishTransaction(ctx, tx); err != nil {
+		fmt.Printf("publish transaction: %v\n", err)
+	}
+
 	return dto.NewTransactionResponse(tx), nil
 }
 

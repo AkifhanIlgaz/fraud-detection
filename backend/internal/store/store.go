@@ -51,10 +51,12 @@ func NewTransactionRepository(ctx context.Context, client *mongo.Client) (Transa
 }
 
 func (r *transactionRepo) Insert(ctx context.Context, tx *models.Transaction) error {
-	_, err := r.col.InsertOne(ctx, tx)
+	res, err := r.col.InsertOne(ctx, tx)
 	if err != nil {
 		return fmt.Errorf("insert transaction: %w", err)
 	}
+	tx.ID = res.InsertedID.(bson.ObjectID)
+
 	return nil
 }
 

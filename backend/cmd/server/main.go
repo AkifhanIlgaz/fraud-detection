@@ -10,6 +10,7 @@ import (
 
 	"fraud-detection/config"
 	"fraud-detection/internal/api"
+	"fraud-detection/internal/queue"
 	"fraud-detection/internal/store"
 )
 
@@ -32,7 +33,13 @@ func main() {
 		log.Fatalf("repo: %v", err)
 	}
 
-	app := api.NewRouter(repo)
+	q, err := queue.New(cfg.RabbitMQURL)
+	if err != nil {
+		log.Fatalf("rabbitmq: %v", err)
+	}
+	defer q.Close()
+
+	app := api.NewRouter(repo, q)
 
 	// Fiber'ı ayrı goroutine'de başlat; ana goroutine sinyal bekler.
 	go func() {

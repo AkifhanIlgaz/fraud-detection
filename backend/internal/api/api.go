@@ -6,12 +6,13 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
 	"fraud-detection/internal/api/handler"
+	"fraud-detection/internal/queue"
 	"fraud-detection/internal/service"
 	"fraud-detection/internal/store"
 )
 
-func NewRouter(repo store.TransactionRepository) *fiber.App {
-	svc := service.NewTransactionService(repo)
+func NewRouter(repo store.TransactionRepository, q *queue.Client) *fiber.App {
+	svc := service.NewTransactionService(repo, q)
 	txHandler := handler.NewTransactionHandler(svc)
 
 	app := fiber.New()
