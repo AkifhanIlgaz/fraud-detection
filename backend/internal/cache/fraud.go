@@ -66,8 +66,11 @@ func (c *FraudCache) GetAmountAverage(ctx context.Context, userID string) (avg f
 // İlk işlemde window süresiyle TTL başlatılır; pencere sabit kalır (kayar değil).
 func (c *FraudCache) UpdateAmountAverage(ctx context.Context, userID string, amount float64, window time.Duration) {
 	key := fraudKey("avg_amount", userID)
+
 	count, _ := c.rdb.HIncrBy(ctx, key, "count", 1).Result()
+
 	c.rdb.HIncrByFloat(ctx, key, "sum", amount)
+
 	if count == 1 {
 		c.rdb.Expire(ctx, key, window)
 	}
@@ -83,6 +86,7 @@ type LastLocation struct {
 // Konum yoksa (nil, nil) döner.
 func (c *FraudCache) GetLastLocation(ctx context.Context, userID string) (*LastLocation, error) {
 	key := fraudKey("location", userID)
+
 	var loc LastLocation
 	if err := c.rdb.HGetAll(ctx, key).Scan(&loc); err != nil {
 		return nil, err

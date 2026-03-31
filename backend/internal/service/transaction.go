@@ -51,6 +51,7 @@ func (s *TransactionService) GetByUserID(ctx context.Context, userID string, pag
 	if err != nil {
 		return dto.PaginatedResponse[dto.TransactionResponse]{}, fmt.Errorf("get by user_id: %w", err)
 	}
+
 	return dto.PaginatedResponse[dto.TransactionResponse]{
 		Items: dto.NewTransactionResponses(txs),
 		Meta:  dto.NewPageMeta(page.Page, page.Limit, total),
@@ -64,6 +65,7 @@ func (s *TransactionService) GetFraudsBetween(ctx context.Context, from, to time
 	if err != nil {
 		return dto.PaginatedResponse[dto.TransactionResponse]{}, fmt.Errorf("get frauds between: %w", err)
 	}
+
 	return dto.PaginatedResponse[dto.TransactionResponse]{
 		Items: dto.NewTransactionResponses(txs),
 		Meta:  dto.NewPageMeta(page.Page, page.Limit, total),
@@ -80,6 +82,7 @@ func (s *TransactionService) UpdateStatus(ctx context.Context, rawID string, req
 	if err != nil {
 		return fmt.Errorf("invalid transaction id: %w", err)
 	}
+
 	return s.repo.UpdateStatus(ctx, id, status)
 }
 
@@ -106,6 +109,7 @@ func calculateTrustScore(total, fraudCount int64) float64 {
 	if total == 0 {
 		return 100
 	}
+
 	return (float64(total-fraudCount) / float64(total)) * 100
 }
 

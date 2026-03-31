@@ -13,6 +13,7 @@ func (s TransactionStatus) IsValid() bool {
 	case StatusPending, StatusApproved, StatusFraud:
 		return true
 	}
+
 	return false
 }
 

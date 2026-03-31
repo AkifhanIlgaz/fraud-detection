@@ -39,6 +39,7 @@ func NewTransactionRepository(ctx context.Context, client *mongo.Client) (Transa
 		{Key: "user_id", Value: 1},
 		{Key: "created_at", Value: -1},
 	}
+
 	indexOpts := options.Index().SetName("user_id_created_at")
 	index := mongo.IndexModel{
 		Keys:    indexKeys,
@@ -56,6 +57,7 @@ func (r *transactionRepo) Insert(ctx context.Context, tx *models.Transaction) er
 	if err != nil {
 		return fmt.Errorf("insert transaction: %w", err)
 	}
+
 	tx.ID = res.InsertedID.(bson.ObjectID)
 
 	return nil
@@ -84,6 +86,7 @@ func (r *transactionRepo) FindByUserID(ctx context.Context, userID string, skip,
 	if err := cur.All(ctx, &txs); err != nil {
 		return nil, 0, fmt.Errorf("decode transactions: %w", err)
 	}
+
 	return txs, total, nil
 }
 
@@ -116,6 +119,7 @@ func (r *transactionRepo) FindFraudsBetween(ctx context.Context, from, to time.T
 	if err := cur.All(ctx, &txs); err != nil {
 		return nil, 0, fmt.Errorf("decode frauds: %w", err)
 	}
+
 	return txs, total, nil
 }
 
@@ -149,9 +153,11 @@ func (r *transactionRepo) GetUserStats(ctx context.Context, userID string) (mode
 	if err := cur.All(ctx, &results); err != nil {
 		return models.UserTransactionStats{}, fmt.Errorf("decode user stats: %w", err)
 	}
+
 	if len(results) == 0 {
 		return models.UserTransactionStats{UserID: userID}, nil
 	}
+
 	return results[0], nil
 }
 
@@ -163,9 +169,11 @@ func (r *transactionRepo) UpdateStatus(ctx context.Context, id bson.ObjectID, st
 	if err != nil {
 		return fmt.Errorf("update status: %w", err)
 	}
+
 	if res.MatchedCount == 0 {
 		return fmt.Errorf("transaction %s not found", id.Hex())
 	}
+
 	return nil
 }
 
@@ -187,6 +195,7 @@ func (r *transactionRepo) MarkLastTransactionsAsFraud(ctx context.Context, userI
 		}
 		ids = append(ids, tx.ID)
 	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -199,5 +208,6 @@ func (r *transactionRepo) MarkLastTransactionsAsFraud(ctx context.Context, userI
 	if err != nil {
 		return fmt.Errorf("mark as fraud: %w", err)
 	}
+
 	return nil
 }

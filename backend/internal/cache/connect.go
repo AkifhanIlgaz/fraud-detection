@@ -13,5 +13,6 @@ func Connect(ctx context.Context, addr string) (*redis.Client, error) {
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		return nil, fmt.Errorf("redis ping: %w", err)
 	}
+
 	return rdb, nil
 }

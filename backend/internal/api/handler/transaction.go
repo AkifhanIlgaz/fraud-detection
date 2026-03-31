@@ -24,6 +24,7 @@ func (h *TransactionHandler) Create(c fiber.Ctx) error {
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err)
 	}
@@ -32,6 +33,7 @@ func (h *TransactionHandler) Create(c fiber.Ctx) error {
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
+
 	return response.OK(c, fiber.StatusCreated, res)
 }
 
@@ -51,6 +53,7 @@ func (h *TransactionHandler) GetByUserID(c fiber.Ctx) error {
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
+
 	return response.OK(c, fiber.StatusOK, res)
 }
 
@@ -75,6 +78,7 @@ func (h *TransactionHandler) GetFraudsBetween(c fiber.Ctx) error {
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
+
 	return response.OK(c, fiber.StatusOK, res)
 }
 
@@ -89,6 +93,7 @@ func (h *TransactionHandler) GetTrustScore(c fiber.Ctx) error {
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err)
 	}
+
 	return response.OK(c, fiber.StatusOK, res)
 }
 
@@ -100,6 +105,7 @@ func (h *TransactionHandler) UpdateStatus(c fiber.Ctx) error {
 	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err)
 	}
@@ -107,5 +113,6 @@ func (h *TransactionHandler) UpdateStatus(c fiber.Ctx) error {
 	if err := h.svc.UpdateStatus(c.Context(), id, req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err)
 	}
+
 	return response.OK(c, fiber.StatusOK, nil)
 }

@@ -49,6 +49,7 @@ func (a *Analyzer) handleViolation(ctx context.Context, msg queue.TransactionMes
 		if err := a.repo.MarkLastTransactionsAsFraud(ctx, msg.UserID, int(v.count)); err != nil {
 			return fmt.Errorf("mark last transactions as fraud: %w", err)
 		}
+
 		log.Printf("[fraud] velocity ihlali — kullanıcı %s'in son %d işlemi fraud olarak işaretlendi",
 			msg.UserID, v.count)
 
@@ -57,9 +58,11 @@ func (a *Analyzer) handleViolation(ctx context.Context, msg queue.TransactionMes
 		if err != nil {
 			return fmt.Errorf("invalid transaction id: %w", err)
 		}
+
 		if err := a.repo.UpdateStatus(ctx, id, models.StatusFraud); err != nil {
 			return fmt.Errorf("update fraud status: %w", err)
 		}
+
 		log.Printf("[fraud] transaction %s fraud olarak işaretlendi — sebep: %s", msg.ID, v.reason)
 	}
 
