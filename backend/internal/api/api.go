@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 
@@ -18,6 +19,11 @@ func NewRouter(repo store.TransactionRepository, q *queue.Client) *fiber.App {
 	app := fiber.New()
 	app.Use(recover.New())
 	app.Use(logger.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{"GET", "POST", "PATCH", "OPTIONS"},
+		AllowHeaders: []string{"Content-Type"},
+	}))
 
 	v1 := app.Group("/api/v1")
 	tx := v1.Group("/transactions")
