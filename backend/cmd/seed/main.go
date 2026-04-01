@@ -111,6 +111,19 @@ func main() {
 		{
 			ID:        bson.NewObjectID(),
 			UserID:    "user-001",
+			Amount:    1450.00,
+			Lat:       41.0890,
+			Lon:       29.0512,
+			Status:    models.StatusSuspicious,
+			CreatedAt: now.AddDate(0, 0, -3),
+			FraudReasons: []string{
+				"unusual_location",
+				"high_risk_merchant",
+			},
+		},
+		{
+			ID:        bson.NewObjectID(),
+			UserID:    "user-001",
 			Amount:    760.40,
 			Lat:       40.9923,
 			Lon:       29.1023,
@@ -185,6 +198,31 @@ func main() {
 		{
 			ID:        bson.NewObjectID(),
 			UserID:    "user-002",
+			Amount:    2890.00,
+			Lat:       39.8542,
+			Lon:       32.7103,
+			Status:    models.StatusSuspicious,
+			CreatedAt: now.AddDate(0, 0, -8),
+			FraudReasons: []string{
+				"velocity_check_failed",
+				"card_not_present",
+			},
+		},
+		{
+			ID:        bson.NewObjectID(),
+			UserID:    "user-002",
+			Amount:    530.75,
+			Lat:       39.9012,
+			Lon:       32.8301,
+			Status:    models.StatusSuspicious,
+			CreatedAt: now.AddDate(0, 0, -4),
+			FraudReasons: []string{
+				"suspicious_device_fingerprint",
+			},
+		},
+		{
+			ID:        bson.NewObjectID(),
+			UserID:    "user-002",
 			Amount:    1100.25,
 			Lat:       39.9271,
 			Lon:       32.8643,
@@ -241,6 +279,19 @@ func main() {
 			Lon:       27.1101,
 			Status:    models.StatusPending,
 			CreatedAt: now.AddDate(0, 0, -2),
+		},
+		{
+			ID:        bson.NewObjectID(),
+			UserID:    "user-003",
+			Amount:    3750.00,
+			Lat:       38.3701,
+			Lon:       27.0644,
+			Status:    models.StatusSuspicious,
+			CreatedAt: now.AddDate(0, 0, -1),
+			FraudReasons: []string{
+				"foreign_currency_mismatch",
+				"multiple_transactions_short_interval",
+			},
 		},
 	}
 

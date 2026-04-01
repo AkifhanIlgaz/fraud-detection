@@ -3,7 +3,7 @@ import axios from "axios";
 import type { ApiResponse } from "@/shared/types/api";
 
 export const http = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
@@ -18,7 +18,10 @@ http.interceptors.response.use(
   },
 );
 
-export async function apiGet<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+export async function apiGet<T>(
+  url: string,
+  params?: Record<string, unknown>,
+): Promise<T> {
   const res = await http.get<ApiResponse<T>>(url, { params });
   return res.data.data;
 }

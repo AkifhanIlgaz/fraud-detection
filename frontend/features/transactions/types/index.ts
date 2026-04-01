@@ -4,7 +4,7 @@ export interface Transaction {
   amount: number;
   lat: number;
   lon: number;
-  status: "pending" | "approved" | "flagged" | "rejected";
+  status: "pending" | "approved" | "suspicious" | "fraud";
   created_at: string;
   fraud_reasons?: string[];
 }
@@ -15,4 +15,5 @@ export interface TrustScore {
   risk_level: "low" | "medium" | "high";
   total: number;
   fraud_count: number;
+  suspicious_count?: number;
 }

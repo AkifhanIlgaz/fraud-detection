@@ -127,7 +127,7 @@ func (r *transactionRepo) GetUserStats(ctx context.Context, userID string) (mode
 	pipeline := mongo.Pipeline{
 		// Sadece bu kullanıcının işlemlerini al
 		{{Key: "$match", Value: bson.M{"user_id": userID}}},
-		// Toplam işlem sayısını ve fraud olanları say
+		// Toplam işlem sayısını, fraud ve suspicious olanları say
 		{{Key: "$group", Value: bson.M{
 			"_id":   "$user_id",
 			"total": bson.M{"$sum": 1},
@@ -135,6 +135,15 @@ func (r *transactionRepo) GetUserStats(ctx context.Context, userID string) (mode
 				"$sum": bson.M{
 					"$cond": bson.A{
 						bson.M{"$eq": bson.A{"$status", models.StatusFraud}},
+						1,
+						0,
+					},
+				},
+			},
+			"suspicious_count": bson.M{
+				"$sum": bson.M{
+					"$cond": bson.A{
+						bson.M{"$eq": bson.A{"$status", models.StatusSuspicious}},
 						1,
 						0,
 					},

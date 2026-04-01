@@ -8,7 +8,7 @@ export const createTransactionSchema = z.object({
 });
 
 export const updateStatusSchema = z.object({
-  status: z.enum(["pending", "approved", "flagged", "rejected"], "Invalid status"),
+  status: z.enum(["pending", "approved", "suspicious", "fraud"], "Invalid status"),
 });
 
 export const fraudsFilterSchema = z.object({

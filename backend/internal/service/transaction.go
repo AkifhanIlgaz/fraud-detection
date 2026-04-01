@@ -92,25 +92,32 @@ func (s *TransactionService) GetUserTrustScore(ctx context.Context, userID strin
 		return dto.UserTrustScoreResponse{}, fmt.Errorf("get user stats: %w", err)
 	}
 
-	score := calculateTrustScore(stats.Total, stats.FraudCount)
+	score := calculateTrustScore(stats.Total, stats.FraudCount, stats.SuspiciousCount)
 
 	return dto.UserTrustScoreResponse{
-		UserID:     userID,
-		Score:      score,
-		RiskLevel:  riskLevel(score),
-		Total:      stats.Total,
-		FraudCount: stats.FraudCount,
+		UserID:          userID,
+		Score:           score,
+		RiskLevel:       riskLevel(score),
+		Total:           stats.Total,
+		FraudCount:      stats.FraudCount,
+		SuspiciousCount: stats.SuspiciousCount,
 	}, nil
 }
 
 // calculateTrustScore: işlem geçmişi yoksa 100 (nötr başlangıç).
-// Aksi hâlde fraud olmayan işlemlerin oranı 0-100 arasına ölçeklenir.
-func calculateTrustScore(total, fraudCount int64) float64 {
+// Fraud işlemler skoru tam, suspicious işlemler yarı ağırlıkla düşürür.
+func calculateTrustScore(total, fraudCount, suspiciousCount int64) float64 {
 	if total == 0 {
 		return 100
 	}
 
-	return (float64(total-fraudCount) / float64(total)) * 100
+	penalty := float64(fraudCount) + float64(suspiciousCount)*0.5
+	score := (float64(total) - penalty) / float64(total) * 100
+	if score < 0 {
+		score = 0
+	}
+
+	return score
 }
 
 // riskLevel: score eşikleri iş kuralına göre ayarlanabilir.
