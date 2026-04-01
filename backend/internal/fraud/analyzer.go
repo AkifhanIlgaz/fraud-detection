@@ -25,17 +25,26 @@ func NewAnalyzer(repo store.TransactionRepository, fc *cache.FraudCache) *Analyz
 
 func (a *Analyzer) Analyze(ctx context.Context, msg queue.TransactionMessage) error {
 	violations := a.runRules(ctx, msg)
-	if len(violations) < 2 {
+
+	switch len(violations) {
+	case 0:
+		a.cache.UpdateAmountAverage(ctx, msg.UserID, msg.Amount, amountHistoryTTL)
+		return nil
+
+	case 1:
 		if !slices.ContainsFunc(violations, func(v violation) bool { return v.reason == ReasonAmountAnomaly }) {
 			a.cache.UpdateAmountAverage(ctx, msg.UserID, msg.Amount, amountHistoryTTL)
 		}
-		// TODO: fraud degilse last location guncelle
-		return nil
-	}
 
-	for _, v := range violations {
-		if err := a.handleViolation(ctx, msg, v); err != nil {
+		if err := a.handleViolation(ctx, msg, violations[0], models.StatusSuspicious); err != nil {
 			return err
+		}
+
+	default:
+		for _, v := range violations {
+			if err := a.handleViolation(ctx, msg, v, models.StatusFraud); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -43,15 +52,15 @@ func (a *Analyzer) Analyze(ctx context.Context, msg queue.TransactionMessage) er
 	return nil
 }
 
-func (a *Analyzer) handleViolation(ctx context.Context, msg queue.TransactionMessage, v violation) error {
+func (a *Analyzer) handleViolation(ctx context.Context, msg queue.TransactionMessage, v violation, status models.TransactionStatus) error {
 	switch v.reason {
 	case ReasonVelocity:
 		if err := a.repo.MarkLastTransactionsAsFraud(ctx, msg.UserID, int(v.count)); err != nil {
 			return fmt.Errorf("mark last transactions as fraud: %w", err)
 		}
 
-		log.Printf("[fraud] velocity ihlali — kullanıcı %s'in son %d işlemi fraud olarak işaretlendi",
-			msg.UserID, v.count)
+		log.Printf("[fraud] velocity ihlali — kullanıcı %s'in son %d işlemi %s olarak işaretlendi",
+			msg.UserID, v.count, status)
 
 	default:
 		id, err := bson.ObjectIDFromHex(msg.ID)
@@ -59,11 +68,11 @@ func (a *Analyzer) handleViolation(ctx context.Context, msg queue.TransactionMes
 			return fmt.Errorf("invalid transaction id: %w", err)
 		}
 
-		if err := a.repo.UpdateStatus(ctx, id, models.StatusFraud); err != nil {
-			return fmt.Errorf("update fraud status: %w", err)
+		if err := a.repo.UpdateStatus(ctx, id, status); err != nil {
+			return fmt.Errorf("update transaction status: %w", err)
 		}
 
-		log.Printf("[fraud] transaction %s fraud olarak işaretlendi — sebep: %s", msg.ID, v.reason)
+		log.Printf("[fraud] transaction %s %s olarak işaretlendi — sebep: %s", msg.ID, status, v.reason)
 	}
 
 	return nil
