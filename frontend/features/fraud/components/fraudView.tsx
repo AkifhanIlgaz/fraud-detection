@@ -2,13 +2,10 @@
 
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { Button, DateField, DateRangePicker, Label, RangeCalendar } from "@heroui/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
-import { ChevronLeft } from "lucide-react";
 
-import { ThemeToggle } from "@/shared/components/themeToggle";
 import { dateRangeSchema, type DateRangeValues } from "../schemas";
 import { FraudTable } from "./fraudTable";
 
@@ -34,8 +31,6 @@ const PRESETS = [
 // ── View ───────────────────────────────────────────────────────────────────
 
 export function FraudView() {
-  const router = useRouter();
-
   const { control, watch, setValue, formState: { isValid, errors } } = useForm<DateRangeValues>({
     resolver: zodResolver(dateRangeSchema),
     defaultValues: { start: daysAgoStr(7), end: todayStr() },
@@ -49,19 +44,6 @@ export function FraudView() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onPress={() => router.push("/")}>
-          <ChevronLeft aria-hidden />
-          Back
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold">Fraud Transactions</h1>
-          <p className="text-sm text-muted">Browse fraud activity by date range</p>
-        </div>
-        <ThemeToggle />
-      </div>
-
       {/* Date range controls */}
       <div className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-surface p-4">
         {/* Presets */}

@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Outfit } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
+
+import { PageHeader } from "@/shared/components/pageHeader";
+import { Sidebar } from "@/shared/components/sidebar";
 import { Providers } from "./providers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -31,11 +24,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={` ${outfit.className} antialiased`}
+      className={`${outfit.className} antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="flex min-h-screen bg-background">
+        <Providers>
+          <Sidebar />
+          <main className="flex flex-1 flex-col">
+            <PageHeader />
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

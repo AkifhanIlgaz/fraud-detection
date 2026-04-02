@@ -5,8 +5,6 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, FieldError, Input, Label, TextField } from "@heroui/react";
-import Link from "next/link";
-import { ThemeToggle } from "@/shared/components/themeToggle";
 import { z } from "zod";
 
 const schema = z.object({
@@ -31,20 +29,16 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+    <div className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <Card.Header>
-          <Card.Title>Fraud Detection</Card.Title>
+          <Card.Title>User Lookup</Card.Title>
           <Card.Description>
             Enter a user ID to view their transaction history and trust score.
           </Card.Description>
         </Card.Header>
         <Card.Content>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-
             <Controller
               name="userID"
               control={control}
@@ -74,13 +68,6 @@ export default function Home() {
             </Button>
           </form>
         </Card.Content>
-        <Card.Footer>
-          <Link href="/frauds" className="w-full">
-            <Button className="w-full" variant="outline">
-              View Fraud Transactions
-            </Button>
-          </Link>
-        </Card.Footer>
       </Card>
     </div>
   );
