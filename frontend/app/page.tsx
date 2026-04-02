@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, FieldError, Input, Label, TextField } from "@heroui/react";
+import Link from "next/link";
 import { ThemeToggle } from "@/shared/components/themeToggle";
 import { z } from "zod";
 
@@ -43,6 +44,7 @@ export default function Home() {
         </Card.Header>
         <Card.Content>
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+
             <Controller
               name="userID"
               control={control}
@@ -72,6 +74,13 @@ export default function Home() {
             </Button>
           </form>
         </Card.Content>
+        <Card.Footer>
+          <Link href="/frauds" className="w-full">
+            <Button className="w-full" variant="outline">
+              View Fraud Transactions
+            </Button>
+          </Link>
+        </Card.Footer>
       </Card>
     </div>
   );

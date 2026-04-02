@@ -9,8 +9,6 @@ export const transactionKeys = {
     [...transactionKeys.all, "user", userID, params] as const,
   trustScore: (userID: string) =>
     [...transactionKeys.all, "trust-score", userID] as const,
-  frauds: (from: string, to: string, params?: PageParams) =>
-    [...transactionKeys.all, "frauds", from, to, params] as const,
 };
 
 export function useUserTransactions(userID: string, params?: PageParams) {
@@ -26,13 +24,5 @@ export function useTrustScore(userID: string) {
     queryKey: transactionKeys.trustScore(userID),
     queryFn: () => TransactionService.getTrustScore(userID),
     enabled: !!userID,
-  });
-}
-
-export function useFraudTransactions(from: string, to: string, params?: PageParams) {
-  return useQuery({
-    queryKey: transactionKeys.frauds(from, to, params),
-    queryFn: () => TransactionService.getFrauds(from, to, params),
-    enabled: !!from && !!to,
   });
 }
