@@ -1,53 +1,55 @@
 "use client";
 
-import { Button } from "@heroui/react";
-import { ChevronLeft } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Button, DateField, DateRangePicker, Label, RangeCalendar } from "@heroui/react";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import type { DateValue } from "@internationalized/date";
+import { ChevronLeft } from "lucide-react";
 
 import { ThemeToggle } from "@/shared/components/themeToggle";
+import { dateRangeSchema, type DateRangeValues } from "../schemas";
 import { FraudTable } from "./fraudTable";
 
-function toDateInput(date: Date): string {
-  return date.toISOString().slice(0, 10);
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function todayStr() {
+  return today(getLocalTimeZone()).toString();
 }
 
-function toFromISO(dateStr: string): string {
-  return `${dateStr}T00:00:00.000Z`;
+function daysAgoStr(n: number) {
+  return today(getLocalTimeZone()).subtract({ days: n }).toString();
 }
 
-function toToISO(dateStr: string): string {
-  return `${dateStr}T23:59:59.999Z`;
-}
-
-function today() {
-  return toDateInput(new Date());
-}
-
-function daysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return toDateInput(d);
-}
+// ── Presets ────────────────────────────────────────────────────────────────
 
 const PRESETS = [
-  { label: "Today", from: () => today(), to: () => today() },
-  { label: "Last 7 days", from: () => daysAgo(7), to: () => today() },
-  { label: "Last 30 days", from: () => daysAgo(30), to: () => today() },
-  { label: "Last 90 days", from: () => daysAgo(90), to: () => today() },
-] as const;
+  { label: "Today", start: () => todayStr(), end: () => todayStr() },
+  { label: "Last 7 days", start: () => daysAgoStr(7), end: () => todayStr() },
+  { label: "Last 30 days", start: () => daysAgoStr(30), end: () => todayStr() },
+  { label: "Last 90 days", start: () => daysAgoStr(90), end: () => todayStr() },
+];
+
+// ── View ───────────────────────────────────────────────────────────────────
 
 export function FraudView() {
   const router = useRouter();
-  const [fromDate, setFromDate] = useState(() => daysAgo(7));
-  const [toDate, setToDate] = useState(() => today());
+
+  const { control, watch, setValue, formState: { isValid, errors } } = useForm<DateRangeValues>({
+    resolver: zodResolver(dateRangeSchema),
+    defaultValues: { start: daysAgoStr(7), end: todayStr() },
+    mode: "onChange",
+  });
+
+  const { start, end } = watch();
 
   const activePreset =
-    PRESETS.find((p) => p.from() === fromDate && p.to() === toDate)?.label ??
-    null;
+    PRESETS.find((p) => p.start() === start && p.end() === end)?.label ?? null;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" onPress={() => router.push("/")}>
           <ChevronLeft aria-hidden />
@@ -55,25 +57,23 @@ export function FraudView() {
         </Button>
         <div className="flex-1">
           <h1 className="text-xl font-semibold">Fraud Transactions</h1>
-          <p className="text-sm text-muted">
-            Browse fraud activity by date range
-          </p>
+          <p className="text-sm text-muted">Browse fraud activity by date range</p>
         </div>
         <ThemeToggle />
       </div>
 
       {/* Date range controls */}
-      <div className="flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface p-4">
-        {/* Preset buttons */}
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-surface p-4">
+        {/* Presets */}
+        <div className="flex flex-wrap gap-2 pt-1">
           {PRESETS.map((preset) => (
             <Button
               key={preset.label}
               size="sm"
               variant={activePreset === preset.label ? "primary" : "outline"}
               onPress={() => {
-                setFromDate(preset.from());
-                setToDate(preset.to());
+                setValue("start", preset.start(), { shouldValidate: true });
+                setValue("end", preset.end(), { shouldValidate: true });
               }}
             >
               {preset.label}
@@ -81,34 +81,103 @@ export function FraudView() {
           ))}
         </div>
 
-        {/* Custom date inputs */}
-        <div className="flex items-end gap-3 ml-auto">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted">From</label>
-            <input
-              type="date"
-              value={fromDate}
-              max={toDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="h-9 rounded-lg border border-border bg-field-background px-3 text-sm text-field-foreground focus:outline-none focus:ring-2 focus:ring-focus"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted">To</label>
-            <input
-              type="date"
-              value={toDate}
-              min={fromDate}
-              max={today()}
-              onChange={(e) => setToDate(e.target.value)}
-              className="h-9 rounded-lg border border-border bg-field-background px-3 text-sm text-field-foreground focus:outline-none focus:ring-2 focus:ring-focus"
-            />
-          </div>
+        {/* DateRangePicker */}
+        <div className="ml-auto">
+          <Controller
+            name="start"
+            control={control}
+            render={({ field: startField }) => (
+              <Controller
+                name="end"
+                control={control}
+                render={({ field: endField }) => {
+                  const value: { start: DateValue; end: DateValue } | null =
+                    startField.value && endField.value
+                      ? {
+                          start: parseDate(startField.value),
+                          end: parseDate(endField.value),
+                        }
+                      : null;
+
+                  return (
+                    <DateRangePicker
+                      value={value}
+                      maxValue={today(getLocalTimeZone())}
+                      isInvalid={!!errors.end}
+                      onChange={(range) => {
+                        if (range) {
+                          startField.onChange(range.start.toString());
+                          endField.onChange(range.end.toString());
+                        }
+                      }}
+                    >
+                      <Label>Date Range</Label>
+                      <DateField.Group fullWidth>
+                        <DateField.Input slot="start">
+                          {(segment) => <DateField.Segment segment={segment} />}
+                        </DateField.Input>
+                        <DateRangePicker.RangeSeparator />
+                        <DateField.Input slot="end">
+                          {(segment) => <DateField.Segment segment={segment} />}
+                        </DateField.Input>
+                        <DateField.Suffix>
+                          <DateRangePicker.Trigger>
+                            <DateRangePicker.TriggerIndicator />
+                          </DateRangePicker.Trigger>
+                        </DateField.Suffix>
+                      </DateField.Group>
+                      {errors.end && (
+                        <p className="mt-1 text-xs text-danger">
+                          {errors.end.message}
+                        </p>
+                      )}
+                      <DateRangePicker.Popover>
+                        <RangeCalendar aria-label="Select date range">
+                          <RangeCalendar.Header>
+                            <RangeCalendar.YearPickerTrigger>
+                              <RangeCalendar.YearPickerTriggerHeading />
+                              <RangeCalendar.YearPickerTriggerIndicator />
+                            </RangeCalendar.YearPickerTrigger>
+                            <RangeCalendar.NavButton slot="previous" />
+                            <RangeCalendar.NavButton slot="next" />
+                          </RangeCalendar.Header>
+                          <RangeCalendar.Grid>
+                            <RangeCalendar.GridHeader>
+                              {(day) => (
+                                <RangeCalendar.HeaderCell>
+                                  {day}
+                                </RangeCalendar.HeaderCell>
+                              )}
+                            </RangeCalendar.GridHeader>
+                            <RangeCalendar.GridBody>
+                              {(date) => <RangeCalendar.Cell date={date} />}
+                            </RangeCalendar.GridBody>
+                          </RangeCalendar.Grid>
+                          <RangeCalendar.YearPickerGrid>
+                            <RangeCalendar.YearPickerGridBody>
+                              {({ year }) => (
+                                <RangeCalendar.YearPickerCell year={year} />
+                              )}
+                            </RangeCalendar.YearPickerGridBody>
+                          </RangeCalendar.YearPickerGrid>
+                        </RangeCalendar>
+                      </DateRangePicker.Popover>
+                    </DateRangePicker>
+                  );
+                }}
+              />
+            )}
+          />
         </div>
       </div>
 
-      {/* Table */}
-      <FraudTable from={toFromISO(fromDate)} to={toToISO(toDate)} />
+      {/* Table — only render when date range is valid */}
+      {isValid && start && end && (
+        <FraudTable
+          from={`${start}T00:00:00.000Z`}
+          to={`${end}T23:59:59.999Z`}
+        />
+      )}
     </div>
   );
 }

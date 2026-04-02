@@ -14,3 +14,14 @@ export const fraudsQuerySchema = z.object({
 });
 
 export type FraudsQueryInput = z.infer<typeof fraudsQuerySchema>;
+
+const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
+
+export const dateRangeSchema = z
+  .object({ start: dateStr, end: dateStr })
+  .refine((d) => d.start <= d.end, {
+    message: "Start date must be before end date",
+    path: ["end"],
+  });
+
+export type DateRangeValues = z.infer<typeof dateRangeSchema>;

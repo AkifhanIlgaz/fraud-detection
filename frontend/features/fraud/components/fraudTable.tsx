@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
+
 import type { Transaction } from "@/features/transactions/types";
 import { useFraudTransactions } from "../hooks/useFrauds";
 import {
@@ -340,9 +343,13 @@ export function FraudTable({ from, to }: { from: string; to: string }) {
                       <CopyableId id={tx.id} />
                     </Table.Cell>
                     <Table.Cell>
-                      <span className="font-mono text-xs text-muted">
+                      <Link
+                        href={`/users/${encodeURIComponent(tx.user_id)}`}
+                        className="inline-flex items-center gap-1 font-mono text-xs text-accent hover:underline"
+                      >
                         …{tx.user_id.slice(-8)}
-                      </span>
+                        <ExternalLink aria-hidden size={10} />
+                      </Link>
                     </Table.Cell>
                     <Table.Cell>
                       <span className="font-semibold tabular-nums">
