@@ -27,7 +27,7 @@ export function ThemeToggle() {
       onPress={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       aria-label="Toggle theme"
     >
-      {resolvedTheme === "dark" ? <Sun /> : <MoonIcon />}
+      {resolvedTheme === "dark" ? <Sun aria-hidden /> : <MoonIcon aria-hidden />}
     </Button>
   );
 }

@@ -1,14 +1,10 @@
-import { apiGet, apiPatch, apiPost } from "@/shared/lib/http";
+import { apiGet, apiPatch } from "@/shared/lib/http";
 import type { PageParams, PaginatedResponse } from "@/shared/types/api";
-import type { CreateTransactionInput, UpdateStatusInput } from "../schemas";
+import type { UpdateStatusInput } from "../schemas";
 import type { Transaction, TrustScore } from "../types";
 
 export class TransactionService {
   private static readonly base = "/transactions";
-
-  static async create(data: CreateTransactionInput): Promise<Transaction> {
-    return apiPost<Transaction>(this.base, data);
-  }
 
   static async getByUser(
     userID: string,

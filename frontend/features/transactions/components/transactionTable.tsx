@@ -2,26 +2,40 @@
 
 import { useMemo, useState } from "react";
 
-import { Button, Chip, ListBox, Pagination, Select, Table, toast } from "@heroui/react";
+import {
+  Button,
+  Chip,
+  ListBox,
+  Pagination,
+  Select,
+  Table,
+  toast,
+} from "@heroui/react";
 
 import { useUserTransactions } from "../hooks/useTransactions";
-import { StatusChip } from "./statusChip";
 import type { Transaction } from "../types";
+import { StatusChip } from "./statusChip";
 
 // ── Fraud reason registry ──────────────────────────────────────────────────
 
 type ChipColor = "default" | "accent" | "success" | "warning" | "danger";
 
 const REASON_CONFIG: Record<string, { label: string; color: ChipColor }> = {
-  amount_exceeds_daily_limit:           { label: "Exceeds Daily Limit",      color: "danger"  },
-  unusual_location:                     { label: "Unusual Location",          color: "warning" },
-  multiple_transactions_short_interval: { label: "Multiple Rapid Txns",       color: "warning" },
-  high_risk_merchant:                   { label: "High Risk Merchant",        color: "danger"  },
-  card_not_present:                     { label: "Card Not Present",          color: "accent"  },
-  ip_country_mismatch:                  { label: "IP / Country Mismatch",     color: "danger"  },
-  velocity_check_failed:                { label: "Velocity Check Failed",     color: "warning" },
-  suspicious_device_fingerprint:        { label: "Suspicious Device",         color: "accent"  },
-  foreign_currency_mismatch:            { label: "Currency Mismatch",         color: "default" },
+  amount_exceeds_daily_limit: { label: "Exceeds Daily Limit", color: "danger" },
+  unusual_location: { label: "Unusual Location", color: "warning" },
+  multiple_transactions_short_interval: {
+    label: "Multiple Rapid Txns",
+    color: "warning",
+  },
+  high_risk_merchant: { label: "High Risk Merchant", color: "danger" },
+  card_not_present: { label: "Card Not Present", color: "accent" },
+  ip_country_mismatch: { label: "IP / Country Mismatch", color: "danger" },
+  velocity_check_failed: { label: "Velocity Check Failed", color: "warning" },
+  suspicious_device_fingerprint: {
+    label: "Suspicious Device",
+    color: "accent",
+  },
+  foreign_currency_mismatch: { label: "Currency Mismatch", color: "default" },
 };
 
 const ALL_REASON_KEYS = Object.keys(REASON_CONFIG);
@@ -39,8 +53,17 @@ function getReasonConfig(reason: string): { label: string; color: ChipColor } {
 
 function CopyIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="12" height="12" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
@@ -49,8 +72,17 @@ function CopyIcon({ className }: { className?: string }) {
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} width="12" height="12" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className={className}
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -79,7 +111,7 @@ function CopyableId({ id }: { id: string }) {
     >
       <span className="font-mono text-xs text-muted">…{id.slice(-8)}</span>
       {copied ? (
-        <CheckIcon className="shrink-0 text-[var(--success)]" />
+        <CheckIcon className="shrink-0 text-success" />
       ) : (
         <CopyIcon className="shrink-0 text-muted opacity-50 transition-opacity group-hover:opacity-100" />
       )}
@@ -107,7 +139,12 @@ type StatusValue = Transaction["status"];
 type SortCol = "amount" | "created_at";
 type SortDir = "ascending" | "descending";
 
-const ALL_STATUSES: StatusValue[] = ["pending", "approved", "suspicious", "fraud"];
+const ALL_STATUSES: StatusValue[] = [
+  "pending",
+  "approved",
+  "suspicious",
+  "fraud",
+];
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
 
@@ -124,7 +161,8 @@ function FilterSelect({
   onChange: (val: string[]) => void;
   children: React.ReactNode;
 }) {
-  const allCount = triggerLabel === "Status" ? ALL_STATUSES.length : ALL_REASON_KEYS.length;
+  const allCount =
+    triggerLabel === "Status" ? ALL_STATUSES.length : ALL_REASON_KEYS.length;
   const isAll = selected.length === allCount;
 
   return (
@@ -141,7 +179,9 @@ function FilterSelect({
             isAll || !selectedItems?.length ? (
               <span className="text-muted">{triggerLabel}</span>
             ) : (
-              <span>{triggerLabel} ({selectedItems.length})</span>
+              <span>
+                {triggerLabel} ({selectedItems.length})
+              </span>
             )
           }
         </Select.Value>
@@ -161,8 +201,12 @@ export function TransactionTable({ userID }: { userID: string }) {
   const [pageSize, setPageSize] = useState<PageSizeOption>(20);
   const [sortCol, setSortCol] = useState<SortCol>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("descending");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([...ALL_STATUSES]);
-  const [selectedReasons, setSelectedReasons] = useState<string[]>([...ALL_REASON_KEYS]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([
+    ...ALL_STATUSES,
+  ]);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([
+    ...ALL_REASON_KEYS,
+  ]);
 
   const { data, isLoading, isError, error } = useUserTransactions(userID, {
     page,
@@ -186,7 +230,8 @@ export function TransactionTable({ userID }: { userID: string }) {
       if (!selectedStatuses.includes(tx.status)) return false;
       // Transactions without fraud reasons always pass the reason filter
       if (tx.fraud_reasons && tx.fraud_reasons.length > 0) {
-        if (!tx.fraud_reasons.some((r) => selectedReasons.includes(r))) return false;
+        if (!tx.fraud_reasons.some((r) => selectedReasons.includes(r)))
+          return false;
       }
       return true;
     });
@@ -200,7 +245,10 @@ export function TransactionTable({ userID }: { userID: string }) {
     });
   }, [rawItems, selectedStatuses, selectedReasons, sortCol, sortDir]);
 
-  function handleSortChange(descriptor: { column: React.Key; direction: SortDir }) {
+  function handleSortChange(descriptor: {
+    column: React.Key;
+    direction: SortDir;
+  }) {
     setSortCol(descriptor.column as SortCol);
     setSortDir(descriptor.direction);
   }
@@ -224,16 +272,16 @@ export function TransactionTable({ userID }: { userID: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-xl border border-border">
-
-        {/* ── Filter header bar ── */}
+      <div className="overflow-hidden rounded-xl border">
         <div className="flex flex-wrap items-center gap-3 border-b border-border bg-default/60 px-4 py-2">
-
           {/* Status dropdown */}
           <FilterSelect
             triggerLabel="Status"
             selected={selectedStatuses}
-            onChange={(v) => { setSelectedStatuses(v); setPage(1); }}
+            onChange={(v) => {
+              setSelectedStatuses(v);
+              setPage(1);
+            }}
           >
             {ALL_STATUSES.map((s) => (
               <ListBox.Item key={s} id={s} textValue={s}>
@@ -249,7 +297,10 @@ export function TransactionTable({ userID }: { userID: string }) {
           <FilterSelect
             triggerLabel="Reason"
             selected={selectedReasons}
-            onChange={(v) => { setSelectedReasons(v); setPage(1); }}
+            onChange={(v) => {
+              setSelectedReasons(v);
+              setPage(1);
+            }}
           >
             {pageReasons.length > 0 ? (
               pageReasons.map((reason) => {
@@ -267,7 +318,9 @@ export function TransactionTable({ userID }: { userID: string }) {
               })
             ) : (
               <ListBox.Item id="__empty" isDisabled textValue="No reasons">
-                <span className="text-xs text-muted">No fraud reasons on this page</span>
+                <span className="text-xs text-muted">
+                  No fraud reasons on this page
+                </span>
               </ListBox.Item>
             )}
           </FilterSelect>
@@ -307,7 +360,11 @@ export function TransactionTable({ userID }: { userID: string }) {
                 <Select.Popover>
                   <ListBox>
                     {PAGE_SIZE_OPTIONS.map((n) => (
-                      <ListBox.Item key={n} id={String(n)} textValue={String(n)}>
+                      <ListBox.Item
+                        key={n}
+                        id={String(n)}
+                        textValue={String(n)}
+                      >
                         {n}
                       </ListBox.Item>
                     ))}
@@ -343,7 +400,7 @@ export function TransactionTable({ userID }: { userID: string }) {
                 <Table.Column id="created_at" allowsSorting className="w-36">
                   Date
                 </Table.Column>
-                <Table.Column id="fraud_reasons">
+                <Table.Column id="fraud_reasons" className="w-48">
                   Fraud Reasons
                 </Table.Column>
               </Table.Header>
@@ -367,7 +424,9 @@ export function TransactionTable({ userID }: { userID: string }) {
                       <CopyableId id={tx.id} />
                     </Table.Cell>
                     <Table.Cell>
-                      <span className="font-semibold tabular-nums">${tx.amount.toFixed(2)}</span>
+                      <span className="font-semibold tabular-nums">
+                        ${tx.amount.toFixed(2)}
+                      </span>
                     </Table.Cell>
                     <Table.Cell>
                       <StatusChip status={tx.status} />
@@ -390,7 +449,12 @@ export function TransactionTable({ userID }: { userID: string }) {
                         {tx.fraud_reasons?.map((reason) => {
                           const cfg = getReasonConfig(reason);
                           return (
-                            <Chip key={reason} color={cfg.color} size="sm" variant="soft">
+                            <Chip
+                              key={reason}
+                              color={cfg.color}
+                              size="sm"
+                              variant="soft"
+                            >
                               {cfg.label}
                             </Chip>
                           );
@@ -407,46 +471,44 @@ export function TransactionTable({ userID }: { userID: string }) {
 
       {/* ── Pagination — outside wrapper, centered ── */}
       {totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination>
-            <Pagination.Content>
-              <Pagination.Item>
-                <Pagination.Previous
-                  isDisabled={page === 1}
-                  onPress={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  <Pagination.PreviousIcon />
-                </Pagination.Previous>
-              </Pagination.Item>
+        <Pagination className="flex w-full justify-center items-center">
+          <Pagination.Content>
+            <Pagination.Item>
+              <Pagination.Previous
+                isDisabled={page === 1}
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                <Pagination.PreviousIcon />
+              </Pagination.Previous>
+            </Pagination.Item>
 
-              {getPageRange(page, totalPages).map((p, i) =>
-                p === "…" ? (
-                  <Pagination.Item key={`ellipsis-${i}`}>
-                    <Pagination.Ellipsis />
-                  </Pagination.Item>
-                ) : (
-                  <Pagination.Item key={p}>
-                    <Pagination.Link
-                      isActive={p === page}
-                      onPress={() => setPage(p as number)}
-                    >
-                      {p}
-                    </Pagination.Link>
-                  </Pagination.Item>
-                ),
-              )}
+            {getPageRange(page, totalPages).map((p, i) =>
+              p === "…" ? (
+                <Pagination.Item key={`ellipsis-${i}`}>
+                  <Pagination.Ellipsis />
+                </Pagination.Item>
+              ) : (
+                <Pagination.Item key={p}>
+                  <Pagination.Link
+                    isActive={p === page}
+                    onPress={() => setPage(p as number)}
+                  >
+                    {p}
+                  </Pagination.Link>
+                </Pagination.Item>
+              ),
+            )}
 
-              <Pagination.Item>
-                <Pagination.Next
-                  isDisabled={page === totalPages}
-                  onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  <Pagination.NextIcon />
-                </Pagination.Next>
-              </Pagination.Item>
-            </Pagination.Content>
-          </Pagination>
-        </div>
+            <Pagination.Item>
+              <Pagination.Next
+                isDisabled={page === totalPages}
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                <Pagination.NextIcon />
+              </Pagination.Next>
+            </Pagination.Item>
+          </Pagination.Content>
+        </Pagination>
       )}
     </div>
   );
