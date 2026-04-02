@@ -2,6 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import { Breadcrumbs } from "@heroui/react";
+import { Menu } from "lucide-react";
+
+import { useSidebar } from "@/shared/providers/sidebarProvider";
 
 interface Crumb {
   label: string;
@@ -44,20 +47,32 @@ function getPageMeta(pathname: string): PageMeta | null {
 
 export function PageHeader() {
   const pathname = usePathname();
+  const { openMobile } = useSidebar();
   const meta = getPageMeta(pathname);
 
   if (!meta) return null;
 
   return (
-    <header className="border-b border-border px-6 py-4">
-      <Breadcrumbs className="mb-1 text-xs">
-        {meta.breadcrumbs.map((crumb) => (
-          <Breadcrumbs.Item key={crumb.label} href={crumb.href}>
-            {crumb.label}
-          </Breadcrumbs.Item>
-        ))}
-      </Breadcrumbs>
-      <p className="text-sm text-muted">{meta.description}</p>
+    <header className="flex items-center gap-3 border-b border-border px-4 py-4 md:px-6">
+      {/* Hamburger — mobile only */}
+      <button
+        onClick={openMobile}
+        aria-label="Open menu"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-default hover:text-foreground md:hidden"
+      >
+        <Menu size={18} aria-hidden />
+      </button>
+
+      <div>
+        <Breadcrumbs className="mb-0.5 text-xs">
+          {meta.breadcrumbs.map((crumb) => (
+            <Breadcrumbs.Item key={crumb.label} href={crumb.href}>
+              {crumb.label}
+            </Breadcrumbs.Item>
+          ))}
+        </Breadcrumbs>
+        <p className="text-sm text-muted">{meta.description}</p>
+      </div>
     </header>
   );
 }
