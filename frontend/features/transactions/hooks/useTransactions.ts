@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import type { PageParams } from "@/shared/types/api";
-import { TransactionService } from "../services/transaction.service";
+import { TransactionService } from "../services/transactionService";
 
 export const transactionKeys = {
   all: ["transactions"] as const,

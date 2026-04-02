@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 
 import { Button, Chip, ListBox, Pagination, Select, Table, toast } from "@heroui/react";
 
-import { useUserTransactions } from "../hooks/use-transactions";
-import { StatusChip } from "./status-chip";
+import { useUserTransactions } from "../hooks/useTransactions";
+import { StatusChip } from "./statusChip";
 import type { Transaction } from "../types";
 
 // ── Fraud reason registry ──────────────────────────────────────────────────

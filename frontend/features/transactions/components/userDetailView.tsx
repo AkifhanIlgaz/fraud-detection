@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 
 import { Button, Card } from "@heroui/react";
+import { ThemeToggle } from "@/shared/components/themeToggle";
 
-import { useTrustScore, useUserTransactions } from "../hooks/use-transactions";
-import { TransactionTable } from "./transaction-table";
-import { TrustScoreCard } from "./trust-score-card";
+import { useTrustScore, useUserTransactions } from "../hooks/useTransactions";
+import { TransactionTable } from "./transactionTable";
+import { TrustScoreCard } from "./trustScoreCard";
 
 function TrustScoreSkeleton() {
   return (
@@ -39,10 +40,11 @@ export function UserDetailView({ userID }: { userID: string }) {
         <Button variant="outline" onPress={() => router.push("/")}>
           ← Back
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-semibold">User Detail</h1>
           <p className="font-mono text-sm text-muted">{userID}</p>
         </div>
+        <ThemeToggle />
       </div>
 
       {/* Trust Score */}

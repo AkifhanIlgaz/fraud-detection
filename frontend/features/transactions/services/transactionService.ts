@@ -36,7 +36,10 @@ export class TransactionService {
     });
   }
 
-  static async updateStatus(id: string, data: UpdateStatusInput): Promise<void> {
+  static async updateStatus(
+    id: string,
+    data: UpdateStatusInput,
+  ): Promise<void> {
     return apiPatch<void>(`${this.base}/${id}/status`, data);
   }
 }

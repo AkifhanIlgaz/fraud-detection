@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useFraudTransactions } from "@/features/transactions/hooks/use-transactions";
+import { useFraudTransactions } from "@/features/transactions/hooks/useTransactions";
 import type { PageParams } from "@/shared/types/api";
 import { fraudsQuerySchema, type FraudsQueryInput } from "../schemas";
 

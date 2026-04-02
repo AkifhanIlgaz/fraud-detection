@@ -1,2 +1,2 @@
 export * from "./schemas";
-export * from "./hooks/use-frauds";
+export * from "./hooks/useFrauds";

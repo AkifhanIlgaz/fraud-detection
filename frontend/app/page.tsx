@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, FieldError, Input, Label, TextField } from "@heroui/react";
+import { ThemeToggle } from "@/shared/components/themeToggle";
 import { z } from "zod";
 
 const schema = z.object({
@@ -30,6 +31,9 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-sm">
         <Card.Header>
           <Card.Title>Fraud Detection</Card.Title>

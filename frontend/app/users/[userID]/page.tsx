@@ -1,4 +1,4 @@
-import { UserDetailView } from "@/features/transactions/components/user-detail-view";
+import { UserDetailView } from "@/features/transactions/components/userDetailView";
 
 interface Props {
   params: Promise<{ userID: string }>;
