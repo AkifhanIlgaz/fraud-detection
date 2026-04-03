@@ -13,41 +13,14 @@ import {
 } from "@heroui/react";
 
 import { useUserTransactions } from "../hooks/useTransactions";
-import type { Transaction } from "../types";
 import { StatusChip } from "./statusChip";
-
-// ── Fraud reason registry ──────────────────────────────────────────────────
-
-type ChipColor = "default" | "accent" | "success" | "warning" | "danger";
-
-const REASON_CONFIG: Record<string, { label: string; color: ChipColor }> = {
-  amount_exceeds_daily_limit: { label: "Exceeds Daily Limit", color: "danger" },
-  unusual_location: { label: "Unusual Location", color: "warning" },
-  multiple_transactions_short_interval: {
-    label: "Multiple Rapid Txns",
-    color: "warning",
-  },
-  high_risk_merchant: { label: "High Risk Merchant", color: "danger" },
-  card_not_present: { label: "Card Not Present", color: "accent" },
-  ip_country_mismatch: { label: "IP / Country Mismatch", color: "danger" },
-  velocity_check_failed: { label: "Velocity Check Failed", color: "warning" },
-  suspicious_device_fingerprint: {
-    label: "Suspicious Device",
-    color: "accent",
-  },
-  foreign_currency_mismatch: { label: "Currency Mismatch", color: "default" },
-};
-
-const ALL_REASON_KEYS = Object.keys(REASON_CONFIG);
-
-function getReasonConfig(reason: string): { label: string; color: ChipColor } {
-  return (
-    REASON_CONFIG[reason] ?? {
-      label: reason.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      color: "default",
-    }
-  );
-}
+import {
+  ALL_REASON_KEYS,
+  getReasonConfig,
+} from "@/shared/constants/fraudReasons";
+import { PAGE_SIZE_OPTIONS } from "@/shared/constants/pagination";
+import type { PageSizeOption } from "@/shared/constants/pagination";
+import { ALL_STATUSES } from "../constants";
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +28,7 @@ function CopyIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
+      aria-hidden="true"
       width="12"
       height="12"
       viewBox="0 0 24 24"
@@ -74,6 +48,7 @@ function CheckIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
+      aria-hidden="true"
       width="12"
       height="12"
       viewBox="0 0 24 24"
@@ -107,6 +82,7 @@ function CopyableId({ id }: { id: string }) {
     <button
       onClick={handleCopy}
       title={`Copy: ${id}`}
+      aria-label={`Copy transaction ID: ${id}`}
       className="group flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 transition-colors hover:bg-border/50"
     >
       <span className="font-mono text-xs text-muted">…{id.slice(-8)}</span>
@@ -133,43 +109,34 @@ function getPageRange(current: number, total: number): (number | "…")[] {
   return pages;
 }
 
-// ── Types & constants ──────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 
-type StatusValue = Transaction["status"];
 type SortCol = "amount" | "created_at";
 type SortDir = "ascending" | "descending";
-
-const ALL_STATUSES: StatusValue[] = [
-  "pending",
-  "approved",
-  "suspicious",
-  "fraud",
-];
-const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
-type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
 
 // ── Filter Select ──────────────────────────────────────────────────────────
 
 function FilterSelect({
   triggerLabel,
+  totalCount,
   selected,
   onChange,
   children,
 }: {
   triggerLabel: string;
+  totalCount: number;
   selected: string[];
   onChange: (val: string[]) => void;
   children: React.ReactNode;
 }) {
-  const allCount =
-    triggerLabel === "Status" ? ALL_STATUSES.length : ALL_REASON_KEYS.length;
-  const isAll = selected.length === allCount;
+  const isAll = selected.length === totalCount;
 
   return (
     <Select
       selectionMode="multiple"
       value={selected}
       onChange={(val) => onChange((val as string[]) ?? [])}
+      aria-label={triggerLabel}
       className="w-40"
     >
       <Select.Trigger className="h-8 text-xs">
@@ -277,6 +244,7 @@ export function TransactionTable({ userID }: { userID: string }) {
           {/* Status dropdown */}
           <FilterSelect
             triggerLabel="Status"
+            totalCount={ALL_STATUSES.length}
             selected={selectedStatuses}
             onChange={(v) => {
               setSelectedStatuses(v);
@@ -296,6 +264,7 @@ export function TransactionTable({ userID }: { userID: string }) {
           {/* Reason dropdown */}
           <FilterSelect
             triggerLabel="Reason"
+            totalCount={ALL_REASON_KEYS.length}
             selected={selectedReasons}
             onChange={(v) => {
               setSelectedReasons(v);
@@ -351,6 +320,7 @@ export function TransactionTable({ userID }: { userID: string }) {
               <Select
                 value={String(pageSize)}
                 onChange={handlePageSizeChange}
+                aria-label="Items per page"
                 className="w-20"
               >
                 <Select.Trigger className="h-8 text-xs">
@@ -445,21 +415,25 @@ export function TransactionTable({ userID }: { userID: string }) {
                       </span>
                     </Table.Cell>
                     <Table.Cell>
-                      <div className="flex flex-wrap gap-1">
-                        {tx.fraud_reasons?.map((reason) => {
-                          const cfg = getReasonConfig(reason);
-                          return (
-                            <Chip
-                              key={reason}
-                              color={cfg.color}
-                              size="sm"
-                              variant="soft"
-                            >
-                              {cfg.label}
-                            </Chip>
-                          );
-                        })}
-                      </div>
+                      {tx.fraud_reasons && tx.fraud_reasons.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {tx.fraud_reasons.map((reason) => {
+                            const cfg = getReasonConfig(reason);
+                            return (
+                              <Chip
+                                key={reason}
+                                color={cfg.color}
+                                size="sm"
+                                variant="soft"
+                              >
+                                {cfg.label}
+                              </Chip>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-success">No flags</span>
+                      )}
                     </Table.Cell>
                   </Table.Row>
                 ))}

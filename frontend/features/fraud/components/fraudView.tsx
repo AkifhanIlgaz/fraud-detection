@@ -1,10 +1,16 @@
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
+import {
+  Button,
+  DateField,
+  DateRangePicker,
+  Label,
+  RangeCalendar,
+} from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, DateField, DateRangePicker, Label, RangeCalendar } from "@heroui/react";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { Controller, useForm } from "react-hook-form";
 
 import { dateRangeSchema, type DateRangeValues } from "../schemas";
 import { FraudTable } from "./fraudTable";
@@ -31,7 +37,12 @@ const PRESETS = [
 // ── View ───────────────────────────────────────────────────────────────────
 
 export function FraudView() {
-  const { control, watch, setValue, formState: { isValid, errors } } = useForm<DateRangeValues>({
+  const {
+    control,
+    watch,
+    setValue,
+    formState: { isValid, errors },
+  } = useForm<DateRangeValues>({
     resolver: zodResolver(dateRangeSchema),
     defaultValues: { start: daysAgoStr(7), end: todayStr() },
     mode: "onChange",
@@ -45,7 +56,7 @@ export function FraudView() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
       {/* Date range controls */}
-      <div className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface p-4">
         {/* Presets */}
         <div className="flex flex-wrap gap-2 pt-1">
           {PRESETS.map((preset) => (

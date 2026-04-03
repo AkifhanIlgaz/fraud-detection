@@ -16,37 +16,12 @@ import {
   Table,
   toast,
 } from "@heroui/react";
-
-type ChipColor = "default" | "accent" | "success" | "warning" | "danger";
-
-const REASON_CONFIG: Record<string, { label: string; color: ChipColor }> = {
-  amount_exceeds_daily_limit: { label: "Exceeds Daily Limit", color: "danger" },
-  unusual_location: { label: "Unusual Location", color: "warning" },
-  multiple_transactions_short_interval: {
-    label: "Multiple Rapid Txns",
-    color: "warning",
-  },
-  high_risk_merchant: { label: "High Risk Merchant", color: "danger" },
-  card_not_present: { label: "Card Not Present", color: "accent" },
-  ip_country_mismatch: { label: "IP / Country Mismatch", color: "danger" },
-  velocity_check_failed: { label: "Velocity Check Failed", color: "warning" },
-  suspicious_device_fingerprint: {
-    label: "Suspicious Device",
-    color: "accent",
-  },
-  foreign_currency_mismatch: { label: "Currency Mismatch", color: "default" },
-};
-
-const ALL_REASON_KEYS = Object.keys(REASON_CONFIG);
-
-function getReasonConfig(reason: string): { label: string; color: ChipColor } {
-  return (
-    REASON_CONFIG[reason] ?? {
-      label: reason.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      color: "default",
-    }
-  );
-}
+import {
+  ALL_REASON_KEYS,
+  getReasonConfig,
+} from "@/shared/constants/fraudReasons";
+import { PAGE_SIZE_OPTIONS } from "@/shared/constants/pagination";
+import type { PageSizeOption } from "@/shared/constants/pagination";
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -54,6 +29,7 @@ function CopyIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
+      aria-hidden="true"
       width="12"
       height="12"
       viewBox="0 0 24 24"
@@ -73,6 +49,7 @@ function CheckIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
+      aria-hidden="true"
       width="12"
       height="12"
       viewBox="0 0 24 24"
@@ -101,6 +78,7 @@ function CopyableId({ id }: { id: string }) {
     <button
       onClick={handleCopy}
       title={`Copy: ${id}`}
+      aria-label={`Copy transaction ID: ${id}`}
       className="group flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 transition-colors hover:bg-border/50"
     >
       <span className="font-mono text-xs text-muted">…{id.slice(-8)}</span>
@@ -131,9 +109,6 @@ function getPageRange(current: number, total: number): (number | "…")[] {
 
 type SortCol = "amount" | "created_at";
 type SortDir = "ascending" | "descending";
-
-const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
-type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
 
 // ── Main component ─────────────────────────────────────────────────────────
 
@@ -195,6 +170,7 @@ export function FraudTable({ from, to }: { from: string; to: string }) {
               setSelectedReasons((val as string[]) ?? []);
               setPage(1);
             }}
+            aria-label="Filter by fraud reason"
             className="w-40"
           >
             <Select.Trigger className="h-8 text-xs">
@@ -269,6 +245,7 @@ export function FraudTable({ from, to }: { from: string; to: string }) {
                     setPage(1);
                   }
                 }}
+                aria-label="Items per page"
                 className="w-20"
               >
                 <Select.Trigger className="h-8 text-xs">
