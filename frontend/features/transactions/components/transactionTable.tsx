@@ -12,58 +12,16 @@ import {
   toast,
 } from "@heroui/react";
 
-import { useUserTransactions } from "../hooks/useTransactions";
-import { StatusChip } from "./statusChip";
 import {
   ALL_REASON_KEYS,
   getReasonConfig,
 } from "@/shared/constants/fraudReasons";
-import { PAGE_SIZE_OPTIONS } from "@/shared/constants/pagination";
 import type { PageSizeOption } from "@/shared/constants/pagination";
+import { PAGE_SIZE_OPTIONS } from "@/shared/constants/pagination";
+import { Check, Copy } from "lucide-react";
 import { ALL_STATUSES } from "../constants";
-
-// ── Icons ──────────────────────────────────────────────────────────────────
-
-function CopyIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      aria-hidden="true"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      aria-hidden="true"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-// ── Copy-able ID cell ──────────────────────────────────────────────────────
+import { useUserTransactions } from "../hooks/useTransactions";
+import { StatusChip } from "./statusChip";
 
 function CopyableId({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
@@ -87,15 +45,13 @@ function CopyableId({ id }: { id: string }) {
     >
       <span className="font-mono text-xs text-muted">…{id.slice(-8)}</span>
       {copied ? (
-        <CheckIcon className="shrink-0 text-success" />
+        <Check className="size-3 shrink-0 text-success" />
       ) : (
-        <CopyIcon className="shrink-0 text-muted opacity-50 transition-opacity group-hover:opacity-100" />
+        <Copy className="shrink-0 size-3 text-muted opacity-50 transition-opacity group-hover:opacity-100" />
       )}
     </button>
   );
 }
-
-// ── Pagination helpers ─────────────────────────────────────────────────────
 
 function getPageRange(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -109,12 +65,8 @@ function getPageRange(current: number, total: number): (number | "…")[] {
   return pages;
 }
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
 type SortCol = "amount" | "created_at";
 type SortDir = "ascending" | "descending";
-
-// ── Filter Select ──────────────────────────────────────────────────────────
 
 function FilterSelect({
   triggerLabel,
@@ -160,8 +112,6 @@ function FilterSelect({
     </Select>
   );
 }
-
-// ── Main component ─────────────────────────────────────────────────────────
 
 export function TransactionTable({ userID }: { userID: string }) {
   const [page, setPage] = useState(1);

@@ -6,5 +6,6 @@ interface Props {
 
 export default async function UserPage({ params }: Props) {
   const { userID } = await params;
+
   return <UserDetailView userID={decodeURIComponent(userID)} />;
 }
