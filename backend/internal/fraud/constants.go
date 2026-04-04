@@ -2,14 +2,6 @@ package fraud
 
 import "time"
 
-type FraudReason string
-
-const (
-	ReasonVelocity         FraudReason = "velocity_limit_exceeded"
-	ReasonAmountAnomaly    FraudReason = "amount_anomaly"
-	ReasonImpossibleTravel FraudReason = "impossible_travel"
-)
-
 const (
 	// son 1 dakikada max 5 tx
 	maxTxPerMinute = 5

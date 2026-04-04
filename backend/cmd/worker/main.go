@@ -47,7 +47,7 @@ func main() {
 	}
 	defer q.Close()
 
-	analyzer := fraud.NewAnalyzer(repo, cache.NewFraudCache(rdb))
+	analyzer := fraud.NewAnalyzer(repo, cache.NewFraudCache(rdb), q)
 	w := worker.New(q, analyzer)
 
 	if err := w.Run(ctx); err != nil {

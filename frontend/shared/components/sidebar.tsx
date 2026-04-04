@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight, ShieldAlert, Users, X } from "lucide-react";
+import { Activity, ChevronLeft, ChevronRight, ShieldAlert, Users, X } from "lucide-react";
 
 import { useSidebar } from "@/shared/providers/sidebarProvider";
 import { ThemeToggle } from "./themeToggle";
@@ -10,6 +10,7 @@ import { ThemeToggle } from "./themeToggle";
 const NAV_ITEMS = [
   { href: "/", label: "Users", icon: Users },
   { href: "/frauds", label: "Fraud Transactions", icon: ShieldAlert },
+  { href: "/live", label: "Live Feed", icon: Activity },
 ] as const;
 
 function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 	"fraud-detection/internal/api"
 	"fraud-detection/internal/queue"
 	"fraud-detection/internal/store"
+	"fraud-detection/internal/ws"
 )
 
 func main() {
@@ -39,9 +41,29 @@ func main() {
 	}
 	defer q.Close()
 
+	hub := ws.NewHub()
+
+	// WebSocket sunucusunu ayrı bir goroutine'de başlat (port 8081).
+	go func() {
+		if err := hub.ListenAndServe(":8081"); err != nil {
+			log.Fatalf("ws server: %v", err)
+		}
+	}()
+
+	// events exchange'ini dinle → bağlı WebSocket istemcilerine broadcast et.
+	if err := q.ConsumeEvents(context.Background(), func(event queue.TransactionEvent) error {
+		data, err := json.Marshal(event)
+		if err != nil {
+			return err
+		}
+		hub.Broadcast(data)
+		return nil
+	}); err != nil {
+		log.Fatalf("consume events: %v", err)
+	}
+
 	app := api.NewRouter(repo, q)
 
-	// Fiber'ı ayrı goroutine'de başlat; ana goroutine sinyal bekler.
 	go func() {
 		log.Printf("server listening on :%s", cfg.Port)
 		if err := app.Listen(":" + cfg.Port); err != nil {

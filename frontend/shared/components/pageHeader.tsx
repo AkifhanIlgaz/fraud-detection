@@ -42,6 +42,13 @@ function getPageMeta(pathname: string): PageMeta | null {
     };
   }
 
+  if (pathname === "/live") {
+    return {
+      description: "Real-time transaction stream and instant fraud/suspicious alert panel.",
+      breadcrumbs: [{ label: "Live Feed" }],
+    };
+  }
+
   return null;
 }
 

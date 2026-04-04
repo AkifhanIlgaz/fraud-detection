@@ -15,5 +15,4 @@ export interface TrustScore {
   risk_level: "low" | "medium" | "high";
   total: number;
   fraud_count: number;
-  suspicious_count?: number;
 }

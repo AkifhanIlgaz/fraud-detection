@@ -1,6 +1,65 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+@theme {
+  /* Panel-level fraud pulse (alert panel border) */
+  --animate-fraud-pulse: fraud-pulse 1.4s ease-out 2;
+
+  /* Row entry + background flash (table rows — no box-shadow on <tr>) */
+  --animate-enter-approved: enter-approved 1.1s ease-out forwards;
+  --animate-enter-suspicious: enter-suspicious 1.1s ease-out forwards;
+  --animate-enter-fraud: enter-fraud 1.1s ease-out forwards;
+
+  /* Card entry + box-shadow pulse (alert panel cards) — 5s glow */
+  --animate-card-enter-suspicious: card-enter-suspicious 5s ease-out forwards;
+  --animate-card-enter-fraud: card-enter-fraud 5s ease-out forwards;
+}
+
+/* ── Table row entry animations ─────────────────────────────────────── */
+
+@keyframes enter-approved {
+  0%   { opacity: 0; transform: translateY(-8px); background-color: transparent; }
+  35%  { opacity: 1; transform: translateY(0);    background-color: color-mix(in oklch, var(--success) 13%, transparent); }
+  100% { opacity: 1; transform: translateY(0);    background-color: transparent; }
+}
+
+@keyframes enter-suspicious {
+  0%   { opacity: 0; transform: translateY(-8px); background-color: transparent; }
+  35%  { opacity: 1; transform: translateY(0);    background-color: color-mix(in oklch, var(--warning) 13%, transparent); }
+  100% { opacity: 1; transform: translateY(0);    background-color: transparent; }
+}
+
+@keyframes enter-fraud {
+  0%   { opacity: 0; transform: translateY(-8px); background-color: transparent; }
+  35%  { opacity: 1; transform: translateY(0);    background-color: color-mix(in oklch, var(--danger) 13%, transparent); }
+  100% { opacity: 1; transform: translateY(0);    background-color: transparent; }
+}
+
+/* ── Card entry animations (box-shadow works on div) ────────────────── */
+
+/* 0-6% = slide in (0-0.3s of 5s), 6-100% = glow slowly fades */
+@keyframes card-enter-suspicious {
+  0%   { opacity: 0; transform: translateY(-8px); box-shadow: none; }
+  6%   { opacity: 1; transform: translateY(0);    box-shadow: 0 0 0 2px color-mix(in oklch, var(--warning) 70%, transparent), 0 0 16px 4px color-mix(in oklch, var(--warning) 30%, transparent); }
+  25%  {                                          box-shadow: 0 0 0 2px color-mix(in oklch, var(--warning) 50%, transparent), 0 0 12px 3px color-mix(in oklch, var(--warning) 20%, transparent); }
+  100% { opacity: 1; transform: translateY(0);    box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes card-enter-fraud {
+  0%   { opacity: 0; transform: translateY(-8px); box-shadow: none; }
+  6%   { opacity: 1; transform: translateY(0);    box-shadow: 0 0 0 2px color-mix(in oklch, var(--danger) 75%, transparent), 0 0 20px 6px color-mix(in oklch, var(--danger) 35%, transparent); }
+  25%  {                                          box-shadow: 0 0 0 2px color-mix(in oklch, var(--danger) 55%, transparent), 0 0 16px 4px color-mix(in oklch, var(--danger) 22%, transparent); }
+  100% { opacity: 1; transform: translateY(0);    box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── Alert panel border pulse ───────────────────────────────────────── */
+
+@keyframes fraud-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--danger) 55%, transparent); }
+  50%  { box-shadow: 0 0 0 8px color-mix(in oklch, var(--danger) 18%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--danger) 0%, transparent); }
+}
+
 /*
  * HeroUI Theme Customization
  * Add this to your global.css after importing @heroui/styles

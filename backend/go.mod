@@ -4,6 +4,7 @@ go 1.25.3
 
 require (
 	github.com/gofiber/fiber/v3 v3.1.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/spf13/viper v1.21.0

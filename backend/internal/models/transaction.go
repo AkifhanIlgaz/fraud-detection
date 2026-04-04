@@ -14,5 +14,5 @@ type Transaction struct {
 	Lon          float64           `bson:"lon"`
 	Status       TransactionStatus `bson:"status"`
 	CreatedAt    time.Time         `bson:"created_at"`
-	FraudReasons []string          `bson:"fraud_reasons,omitempty"`
+	FraudReasons []FraudReason     `bson:"fraud_reasons,omitempty"`
 }

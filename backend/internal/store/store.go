@@ -16,8 +16,7 @@ type TransactionRepository interface {
 	Insert(ctx context.Context, tx *models.Transaction) error
 	FindByUserID(ctx context.Context, userID string, skip, limit int64) ([]models.Transaction, int64, error)
 	FindFraudsBetween(ctx context.Context, from, to time.Time, skip, limit int64) ([]models.Transaction, int64, error)
-	MarkLastTransactionsAsFraud(ctx context.Context, userID string, count int) error
-	UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus) error
+	UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus, fraudReasons ...models.FraudReason) error
 	GetUserStats(ctx context.Context, userID string) (models.UserTransactionStats, error)
 }
 
@@ -140,15 +139,6 @@ func (r *transactionRepo) GetUserStats(ctx context.Context, userID string) (mode
 					},
 				},
 			},
-			"suspicious_count": bson.M{
-				"$sum": bson.M{
-					"$cond": bson.A{
-						bson.M{"$eq": bson.A{"$status", models.StatusSuspicious}},
-						1,
-						0,
-					},
-				},
-			},
 		}}},
 	}
 
@@ -170,9 +160,9 @@ func (r *transactionRepo) GetUserStats(ctx context.Context, userID string) (mode
 	return results[0], nil
 }
 
-func (r *transactionRepo) UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus) error {
+func (r *transactionRepo) UpdateStatus(ctx context.Context, id bson.ObjectID, status models.TransactionStatus, fraudReasons ...models.FraudReason) error {
 	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{"status": status}}
+	update := bson.M{"$set": bson.M{"status": status, "fraud_reasons": fraudReasons}}
 
 	res, err := r.col.UpdateOne(ctx, filter, update)
 	if err != nil {
@@ -181,41 +171,6 @@ func (r *transactionRepo) UpdateStatus(ctx context.Context, id bson.ObjectID, st
 
 	if res.MatchedCount == 0 {
 		return fmt.Errorf("transaction %s not found", id.Hex())
-	}
-
-	return nil
-}
-
-func (r *transactionRepo) MarkLastTransactionsAsFraud(ctx context.Context, userID string, count int) error {
-	cur, err := r.col.Find(ctx,
-		bson.M{"user_id": userID},
-		options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}}).SetLimit(int64(count)),
-	)
-	if err != nil {
-		return fmt.Errorf("find last transactions: %w", err)
-	}
-	defer cur.Close(ctx)
-
-	var ids []bson.ObjectID
-	for cur.Next(ctx) {
-		var tx models.Transaction
-		if err := cur.Decode(&tx); err != nil {
-			return fmt.Errorf("decode transaction: %w", err)
-		}
-		ids = append(ids, tx.ID)
-	}
-
-	if len(ids) == 0 {
-		return nil
-	}
-
-	// Bulunan tüm ID'leri tek sorguda fraud olarak işaretle.
-	_, err = r.col.UpdateMany(ctx,
-		bson.M{"_id": bson.M{"$in": ids}},
-		bson.M{"$set": bson.M{"status": models.StatusFraud}},
-	)
-	if err != nil {
-		return fmt.Errorf("mark as fraud: %w", err)
 	}
 
 	return nil

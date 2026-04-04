@@ -10,7 +10,11 @@ type RiskConfig = {
 
 const RISK_CONFIG: Record<TrustScore["risk_level"], RiskConfig> = {
   low: { color: "success", label: "Low Risk", barColor: "var(--success)" },
-  medium: { color: "warning", label: "Medium Risk", barColor: "var(--warning)" },
+  medium: {
+    color: "warning",
+    label: "Medium Risk",
+    barColor: "var(--warning)",
+  },
   high: { color: "danger", label: "High Risk", barColor: "var(--danger)" },
 };
 
@@ -49,11 +53,8 @@ function Stat({
 
 export function TrustScoreCard({ data }: { data: TrustScore }) {
   const risk = RISK_CONFIG[data.risk_level];
-  const suspiciousCount = data.suspicious_count ?? 0;
   const fraudRate =
-    data.total > 0
-      ? (((data.fraud_count + suspiciousCount) / data.total) * 100).toFixed(1)
-      : "0.0";
+    data.total > 0 ? ((data.fraud_count / data.total) * 100).toFixed(1) : "0.0";
 
   return (
     <Card>
@@ -76,17 +77,12 @@ export function TrustScoreCard({ data }: { data: TrustScore }) {
 
         <ScoreBar score={data.score} color={risk.barColor} />
 
-        <div className="grid grid-cols-4 gap-3 border-t border-border pt-4">
+        <div className="grid grid-cols-3 gap-3 border-t border-border pt-4">
           <Stat label="Total" value={data.total} />
           <Stat
             label="Fraud"
             value={data.fraud_count}
             color={data.fraud_count > 0 ? "var(--danger)" : undefined}
-          />
-          <Stat
-            label="Suspicious"
-            value={suspiciousCount}
-            color={suspiciousCount > 0 ? "var(--warning)" : undefined}
           />
           <Stat label="Risk Rate" value={`${fraudRate}%`} />
         </div>

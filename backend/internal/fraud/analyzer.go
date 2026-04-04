@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"slices"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 
@@ -17,63 +16,54 @@ import (
 type Analyzer struct {
 	repo  store.TransactionRepository
 	cache *cache.FraudCache
+	q     *queue.Client
 }
 
-func NewAnalyzer(repo store.TransactionRepository, fc *cache.FraudCache) *Analyzer {
-	return &Analyzer{repo: repo, cache: fc}
+func NewAnalyzer(repo store.TransactionRepository, fc *cache.FraudCache, q *queue.Client) *Analyzer {
+	return &Analyzer{repo: repo, cache: fc, q: q}
 }
 
 func (a *Analyzer) Analyze(ctx context.Context, msg queue.TransactionMessage) error {
-	violations := a.runRules(ctx, msg)
+	msg.FraudReasons = a.runRules(ctx, msg)
 
-	switch len(violations) {
-	case 0:
-		a.cache.UpdateAmountAverage(ctx, msg.UserID, msg.Amount, amountHistoryTTL)
-		return nil
-
-	case 1:
-		if !slices.ContainsFunc(violations, func(v violation) bool { return v.reason == ReasonAmountAnomaly }) {
-			a.cache.UpdateAmountAverage(ctx, msg.UserID, msg.Amount, amountHistoryTTL)
-		}
-
-		if err := a.handleViolation(ctx, msg, violations[0], models.StatusSuspicious); err != nil {
-			return err
-		}
-
-	default:
-		for _, v := range violations {
-			if err := a.handleViolation(ctx, msg, v, models.StatusFraud); err != nil {
-				return err
-			}
-		}
+	id, err := bson.ObjectIDFromHex(msg.ID)
+	if err != nil {
+		return fmt.Errorf("invalid transaction id: %w", err)
 	}
 
-	// TODO: alerts exchange'e publish et → WebSocket ile frontend'e bildir
-	return nil
-}
+	if len(msg.FraudReasons) < 2 {
+		msg.Status = models.StatusApproved
 
-func (a *Analyzer) handleViolation(ctx context.Context, msg queue.TransactionMessage, v violation, status models.TransactionStatus) error {
-	switch v.reason {
-	case ReasonVelocity:
-		if err := a.repo.MarkLastTransactionsAsFraud(ctx, msg.UserID, int(v.count)); err != nil {
-			return fmt.Errorf("mark last transactions as fraud: %w", err)
-		}
-
-		log.Printf("[fraud] velocity ihlali — kullanıcı %s'in son %d işlemi %s olarak işaretlendi",
-			msg.UserID, v.count, status)
-
-	default:
-		id, err := bson.ObjectIDFromHex(msg.ID)
-		if err != nil {
-			return fmt.Errorf("invalid transaction id: %w", err)
-		}
-
-		if err := a.repo.UpdateStatus(ctx, id, status); err != nil {
+		if err := a.repo.UpdateStatus(ctx, id, msg.Status); err != nil {
 			return fmt.Errorf("update transaction status: %w", err)
 		}
 
-		log.Printf("[fraud] transaction %s %s olarak işaretlendi — sebep: %s", msg.ID, status, v.reason)
+		return nil
 	}
 
+	msg.Status = models.StatusFraud
+	if err := a.repo.UpdateStatus(ctx, id, msg.Status, msg.FraudReasons...); err != nil {
+		return fmt.Errorf("update transaction status: %w", err)
+	}
+
+	a.publishEvent(ctx, msg)
+
 	return nil
+}
+
+// publishEvent, analiz sonucunu events exchange'e gönderir.
+// Hata durumunda ana akış kesilmez — sadece loglanır.
+func (a *Analyzer) publishEvent(ctx context.Context, msg queue.TransactionMessage) {
+	event := queue.TransactionEvent{
+		TransactionID: msg.ID,
+		UserID:        msg.UserID,
+		Status:        msg.Status,
+		Amount:        msg.Amount,
+		FraudReasons:  msg.FraudReasons,
+		CreatedAt:     msg.CreatedAt,
+	}
+
+	if err := a.q.PublishEvent(ctx, event); err != nil {
+		log.Printf("[fraud] event publish hatası: %v", err)
+	}
 }
