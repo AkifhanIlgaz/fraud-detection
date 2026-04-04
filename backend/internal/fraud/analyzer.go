@@ -33,7 +33,6 @@ func (a *Analyzer) Analyze(ctx context.Context, msg queue.TransactionMessage) er
 
 	if len(msg.FraudReasons) < 2 {
 		msg.Status = models.StatusApproved
-
 		if err := a.repo.UpdateStatus(ctx, id, msg.Status); err != nil {
 			return fmt.Errorf("update transaction status: %w", err)
 		}
