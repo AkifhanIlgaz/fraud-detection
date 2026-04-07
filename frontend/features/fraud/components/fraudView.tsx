@@ -13,6 +13,7 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Controller, useForm } from "react-hook-form";
 
 import { dateRangeSchema, type DateRangeValues } from "../schemas";
+import { FraudChart } from "./fraudChart";
 import { FraudTable } from "./fraudTable";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -164,12 +165,18 @@ export function FraudView() {
         </div>
       </div>
 
-      {/* Table — only render when date range is valid */}
+      {/* Chart & Table — only render when date range is valid */}
       {isValid && start && end && (
-        <FraudTable
-          from={`${start}T00:00:00.000Z`}
-          to={`${end}T23:59:59.999Z`}
-        />
+        <>
+          <FraudChart
+            from={`${start}T00:00:00.000Z`}
+            to={`${end}T23:59:59.999Z`}
+          />
+          <FraudTable
+            from={`${start}T00:00:00.000Z`}
+            to={`${end}T23:59:59.999Z`}
+          />
+        </>
       )}
     </div>
   );

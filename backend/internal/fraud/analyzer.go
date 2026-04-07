@@ -36,7 +36,7 @@ func (a *Analyzer) Analyze(ctx context.Context, msg queue.TransactionMessage) er
 		if err := a.repo.UpdateStatus(ctx, id, msg.Status); err != nil {
 			return fmt.Errorf("update transaction status: %w", err)
 		}
-
+		a.publishEvent(ctx, msg)
 		return nil
 	}
 

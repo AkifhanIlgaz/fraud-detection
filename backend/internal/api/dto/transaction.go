@@ -8,10 +8,11 @@ import (
 )
 
 type CreateTransactionRequest struct {
-	UserID string  `json:"user_id"`
-	Amount float64 `json:"amount"`
-	Lat    float64 `json:"lat"`
-	Lon    float64 `json:"lon"`
+	UserID    string     `json:"user_id"`
+	Amount    float64    `json:"amount"`
+	Lat       float64    `json:"lat"`
+	Lon       float64    `json:"lon"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
 func (r CreateTransactionRequest) Validate() error {

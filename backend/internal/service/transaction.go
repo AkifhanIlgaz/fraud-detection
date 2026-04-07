@@ -23,13 +23,18 @@ func NewTransactionService(repo store.TransactionRepository, q *queue.Client) *T
 }
 
 func (s *TransactionService) Create(ctx context.Context, req dto.CreateTransactionRequest) (dto.TransactionResponse, error) {
+	createdAt := time.Now().UTC()
+	if req.CreatedAt != nil {
+		createdAt = *req.CreatedAt
+	}
+
 	tx := models.Transaction{
 		UserID:    req.UserID,
 		Amount:    req.Amount,
 		Lat:       req.Lat,
 		Lon:       req.Lon,
 		Status:    models.StatusPending,
-		CreatedAt: time.Now().UTC(),
+		CreatedAt: createdAt,
 	}
 	if err := s.repo.Insert(ctx, &tx); err != nil {
 		return dto.TransactionResponse{}, fmt.Errorf("create transaction: %w", err)
