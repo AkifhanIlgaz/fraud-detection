@@ -26,7 +26,9 @@ export function useTransactionStream() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8081/transactions");
+    const wsUrl =
+      process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8081/transactions";
+    const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event: MessageEvent) => {
       let tx: TransactionEvent;

@@ -1,4 +1,7 @@
 services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
   mongo:
     image: mongo:7
     container_name: fraud-mongo
@@ -36,7 +39,7 @@ services:
     container_name: fraud-rabbitmq
     ports:
       - "5672:5672"
-      - "15672:15672"
+      - "15672:15672"   # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     environment:
@@ -51,46 +54,105 @@ services:
       retries: 5
       start_period: 30s
 
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: fraud-backend
-  #   ports:
-  #     - "8080:8080"
-  #   environment:
-  #     MONGO_URI: mongodb://mongo:27017
-  #     REDIS_ADDR: redis:6379
-  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-  #   networks:
-  #     - fraud-net
-  #   depends_on:
-  #     mongo:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   healthcheck:
-  #     test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
-  #     interval: 15s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 10s
+  # ── Backend — API Server ────────────────────────────────────────────────────
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: fraud-frontend
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     NEXT_PUBLIC_API_URL: http://localhost:8080
-  #   networks:
-  #     - fraud-net
-  #   depends_on:
-  #     - backend
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: api
+    container_name: fraud-api
+    ports:
+      - "8080:8080"   # REST API
+      - "8081:8081"   # WebSocket
+    environment:
+      MONGO_URI:    mongodb://mongo:27017
+      REDIS_ADDR:   redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      PORT:         "8080"
+    networks:
+      - fraud-net
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Backend — Fraud Worker ──────────────────────────────────────────────────
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: worker
+    container_name: fraud-worker
+    environment:
+      MONGO_URI:    mongodb://mongo:27017
+      REDIS_ADDR:   redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    networks:
+      - fraud-net
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Frontend ────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # API and WS URLs are baked into the Next.js bundle at build time.
+        # Change these if the app is accessed from a non-localhost address.
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+        NEXT_PUBLIC_WS_URL:  ws://localhost:8081/transactions
+    container_name: fraud-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - fraud-net
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Demo Data Seeder (one-shot, only with --profile seed) ──────────────────
+  #
+  # Usage:  docker compose --profile seed run --rm seed
+  #
+  # Loads 30 days of baseline + fraud transactions so the dashboard
+  # shows a meaningful chart immediately after startup.
+
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: seed
+    container_name: fraud-seed
+    environment:
+      API_URL: http://api:8080/api/v1/transactions
+    networks:
+      - fraud-net
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles:
+      - seed
 
 networks:
   fraud-net:

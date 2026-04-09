@@ -6,10 +6,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
-const apiURL = "http://localhost:8080/api/v1/transactions"
+func apiEndpoint() string {
+	if u := os.Getenv("API_URL"); u != "" {
+		return u
+	}
+	return "http://localhost:8080/api/v1/transactions"
+}
 
 type createTxRequest struct {
 	UserID    string     `json:"user_id"`
@@ -28,7 +34,6 @@ var (
 	newYork    = loc{40.7128, -74.0060}
 	tokyo      = loc{35.6762, 139.6503}
 	sydney     = loc{-33.8688, 151.2093}
-	dubai      = loc{25.2048, 55.2708}
 	losAngeles = loc{34.0522, -118.2437}
 	singapore  = loc{1.3521, 103.8198}
 	saoPaulo   = loc{-23.5505, -46.6333}
@@ -169,7 +174,7 @@ func post(r createTxRequest) error {
 	if err != nil {
 		return err
 	}
-	resp, err := http.Post(apiURL, "application/json", bytes.NewReader(body))
+	resp, err := http.Post(apiEndpoint(), "application/json", bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

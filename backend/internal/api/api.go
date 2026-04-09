@@ -25,6 +25,10 @@ func NewRouter(repo store.TransactionRepository, q *queue.Client) *fiber.App {
 		AllowHeaders: []string{"Content-Type"},
 	}))
 
+	app.Get("/health", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
+
 	v1 := app.Group("/api/v1")
 	tx := v1.Group("/transactions")
 	tx.Post("", txHandler.Create)
