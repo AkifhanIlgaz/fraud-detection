@@ -30,8 +30,6 @@ Bu sistem, finansal işlemleri gerçek zamanlı olarak üç farklı kural ile an
 
 İki veya daha fazla kural ihlal edildiğinde işlem `fraud` olarak işaretlenir. Tek ihlal `approved` sonucu vermez — bu bilinçli bir tasarım tercihidir: false positive oranını düşük tutmak için eşik yüksek tutulmuştur.
 
-**Kapsam dışı:** Makine öğrenmesi tabanlı anomali tespiti, kullanıcı kimlik doğrulama, ödeme işleme.
-
 ---
 
 ## 2. Sistem Mimarisi
@@ -109,7 +107,7 @@ API Server (event consumer):
 
 ### Go — Backend
 
-Düşük gecikme, yüksek eşzamanlılık gerektiren fraud analizi için Go'nun goroutine modeli idealdir. Worker birden fazla transaction'ı eş zamanlı işleyebilir; GC duraklamaları Java/Kotlin'e kıyasla öngörülebilirdir. Statik binary'ler küçük Alpine container image'larına çok iyi oturur.
+Düşük gecikme, yüksek eşzamanlılık gerektiren fraud analizi için Go'nun goroutine modeli idealdir. Worker birden fazla transaction'ı eş zamanlı işleyebilir;
 
 ### Fiber v3 — HTTP Framework
 
@@ -126,8 +124,6 @@ API Server → Worker iletişimi için asenkron kuyruk kullanılmasının nedenl
 Fanout exchange tercih edildi: Hem `transactions` hem `events` exchange'i fanout olarak tanımlandı. Routing key gereksizdir; ileride birden fazla consumer eklenebilir.
 
 ### Redis — Cache ve Anomali Tespitindeki Cache Yönetimi Kararları
-
-Bu sistemin en kritik tasarım kararları Redis cache yönetiminde yapıldı:
 
 #### Velocity Cache (`fraud:velocity:{userID}`)
 
@@ -194,7 +190,7 @@ JSON-RPC 2.0 over stdio. Bu standart MCP transport'u Claude Desktop, Continue, C
 ### Adım 1 — Repoyu klonla
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/AkifhanIlgaz/fraud-detection
 cd fraud-detection
 ```
 
