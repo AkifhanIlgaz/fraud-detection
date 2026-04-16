@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"log/slog"
 
 	"fraud-detection/internal/fraud"
 	"fraud-detection/internal/queue"
@@ -20,6 +21,12 @@ func New(q *queue.Client, a *fraud.Analyzer) *Worker {
 // Sinyal yönetimi ve bağlantı kurma cmd/worker/main.go'da kalır.
 func (w *Worker) Run(ctx context.Context) error {
 	return w.queue.ConsumeTransactions(ctx, func(msg queue.TransactionMessage) error {
+		slog.Info("transaction alındı",
+			"id", msg.ID,
+			"user_id", msg.UserID,
+			"amount", msg.Amount,
+			"status", msg.Status,
+		)
 		return w.analyzer.Analyze(ctx, msg)
 	})
 }
